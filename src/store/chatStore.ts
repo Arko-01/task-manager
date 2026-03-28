@@ -52,20 +52,29 @@ export const useChatStore = create<ChatState>((set, get) => ({
 
       const { data: lastMsg } = await supabase
         .from('messages')
-        .select('*, sender:profiles(*)')
+        .select('*, sender:profiles!messages_sender_id_fkey(*)')
         .eq('conversation_id', conv.id)
         .order('created_at', { ascending: false })
         .limit(1)
       conv.last_message = lastMsg?.[0] || null
 
-      // Unread count
-      const { count } = await supabase
+      // Unread count: get non-self message IDs, then check which are read
+      const { data: otherMsgs } = await supabase
         .from('messages')
-        .select('id', { count: 'exact', head: true })
+        .select('id')
         .eq('conversation_id', conv.id)
-        .not('sender_id', 'eq', user.id)
-        .not('id', 'in', `(select message_id from message_reads where user_id = '${user.id}')`)
-      conv.unread_count = count || 0
+        .neq('sender_id', user.id)
+
+      if (otherMsgs?.length) {
+        const { count: readCount } = await supabase
+          .from('message_reads')
+          .select('message_id', { count: 'exact', head: true })
+          .eq('user_id', user.id)
+          .in('message_id', otherMsgs.map((m) => m.id))
+        conv.unread_count = otherMsgs.length - (readCount || 0)
+      } else {
+        conv.unread_count = 0
+      }
     }
 
     set({ conversations: convs as Conversation[] })
@@ -77,7 +86,7 @@ export const useChatStore = create<ChatState>((set, get) => ({
 
     const { data } = await supabase
       .from('messages')
-      .select('*, sender:profiles(*)')
+      .select('*, sender:profiles!messages_sender_id_fkey(*)')
       .eq('conversation_id', convId)
       .order('created_at')
 
@@ -153,7 +162,7 @@ export const useChatStore = create<ChatState>((set, get) => ({
     const { data, error } = await supabase
       .from('messages')
       .insert({ conversation_id: conv.id, sender_id: user.id, content })
-      .select('*, sender:profiles(*)')
+      .select('*, sender:profiles!messages_sender_id_fkey(*)')
       .single()
 
     if (error) return { error: error.message }
@@ -181,7 +190,7 @@ export const useChatStore = create<ChatState>((set, get) => ({
         async (payload) => {
           const { data } = await supabase
             .from('messages')
-            .select('*, sender:profiles(*)')
+            .select('*, sender:profiles!messages_sender_id_fkey(*)')
             .eq('id', payload.new.id)
             .single()
           if (data) {

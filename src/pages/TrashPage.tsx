@@ -9,34 +9,37 @@ import type { Task } from '../types'
 
 export function TrashPage() {
   const [deletedTasks, setDeletedTasks] = useState<Task[]>([])
-  const [loading, setLoading] = useState(true)
+  const [loading, setLoading] = useState(false)
   const { currentTeam } = useTeamStore()
   const { restoreTask } = useTaskStore()
   const { showToast } = useToast()
 
-  const fetchDeleted = async () => {
-    if (!currentTeam) { setLoading(false); return }
-    setLoading(true)
-    const { data: projects } = await supabase
-      .from('projects')
-      .select('id')
-      .eq('team_id', currentTeam.id)
-
-    if (!projects?.length) { setDeletedTasks([]); setLoading(false); return }
-
-    const { data } = await supabase
-      .from('tasks')
-      .select('*, project:projects(id, name, emoji)')
-      .in('project_id', projects.map((p) => p.id))
-      .not('deleted_at', 'is', null)
-      .order('deleted_at', { ascending: false })
-
-    setDeletedTasks((data as Task[]) || [])
-    setLoading(false)
-  }
-
   useEffect(() => {
+    if (!currentTeam) return
+    let cancelled = false
+    const fetchDeleted = async () => {
+      setLoading(true)
+      const { data: projects } = await supabase
+        .from('projects')
+        .select('id')
+        .eq('team_id', currentTeam.id)
+
+      if (cancelled) return
+      if (!projects?.length) { setDeletedTasks([]); setLoading(false); return }
+
+      const { data } = await supabase
+        .from('tasks')
+        .select('*, project:projects(id, name, emoji)')
+        .in('project_id', projects.map((p) => p.id))
+        .not('deleted_at', 'is', null)
+        .order('deleted_at', { ascending: false })
+
+      if (cancelled) return
+      setDeletedTasks((data as Task[]) || [])
+      setLoading(false)
+    }
     fetchDeleted()
+    return () => { cancelled = true }
   }, [currentTeam])
 
   const handleRestore = async (taskId: string) => {
@@ -69,7 +72,7 @@ export function TrashPage() {
 
       {loading && <div className="py-12 text-center text-sm text-gray-400">Loading...</div>}
 
-      {!loading && !deletedTasks.length && (
+      {!loading && deletedTasks.length === 0 && (
         <div className="py-12 text-center text-sm text-gray-400">Trash is empty</div>
       )}
 
