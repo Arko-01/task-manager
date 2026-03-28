@@ -15,7 +15,7 @@ export function TrashPage() {
   const { showToast } = useToast()
 
   const fetchDeleted = async () => {
-    if (!currentTeam) return
+    if (!currentTeam) { setLoading(false); return }
     setLoading(true)
     const { data: projects } = await supabase
       .from('projects')
