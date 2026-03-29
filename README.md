@@ -1,73 +1,52 @@
-# React + TypeScript + Vite
+# Team Task Manager
 
-This template provides a minimal setup to get React working in Vite with HMR and some ESLint rules.
+A simple, intuitive team task management tool built with a Notion-like minimalist design. Designed for teams not used to complex PM tools.
 
-Currently, two official plugins are available:
+## Features
 
-- [@vitejs/plugin-react](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react) uses [Oxc](https://oxc.rs)
-- [@vitejs/plugin-react-swc](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react-swc) uses [SWC](https://swc.rs/)
+- **4 Views** — List, Kanban board, Calendar, and Gantt chart
+- **Teams & Sub-teams** — Granular 11-permission role system
+- **Task Management** — 2-level sub-tasks, multiple assignees (primary/secondary), dependencies, recurring tasks
+- **Real-time Chat** — 1-on-1, team, and custom group conversations
+- **Command Palette** — Quick actions and search with `Ctrl+K`
+- **Auto-notifications** — Triggered on assignment, comments, and status changes
+- **Bulk Actions** — Status, priority, assignee, and date operations
+- **Task Templates** — Save and reuse common task patterns
+- **Dark Mode** — Full support across all components
+- **Mobile Responsive** — Bottom navigation bar for mobile devices
+- **Accessibility** — WCAG AA contrast, ARIA labels, keyboard navigation
+- **Trash & Restore** — 30-day soft delete with recovery
 
-## React Compiler
+## Tech Stack
 
-The React Compiler is not enabled on this template because of its impact on dev & build performances. To add it, see [this documentation](https://react.dev/learn/react-compiler/installation).
+- **Frontend:** React 19 + TypeScript + Vite + Tailwind CSS + Zustand
+- **Backend:** Supabase (PostgreSQL + Auth + Realtime + Edge Functions)
+- **Hosting:** Vercel (frontend) + Supabase (backend)
 
-## Expanding the ESLint configuration
+## Getting Started
 
-If you are developing a production application, we recommend updating the configuration to enable type-aware lint rules:
+```bash
+# Install dependencies
+npm install
 
-```js
-export default defineConfig([
-  globalIgnores(['dist']),
-  {
-    files: ['**/*.{ts,tsx}'],
-    extends: [
-      // Other configs...
+# Set up environment variables
+cp .env.example .env
+# Fill in your Supabase URL and anon key
 
-      // Remove tseslint.configs.recommended and replace with this
-      tseslint.configs.recommendedTypeChecked,
-      // Alternatively, use this for stricter rules
-      tseslint.configs.strictTypeChecked,
-      // Optionally, add this for stylistic rules
-      tseslint.configs.stylisticTypeChecked,
+# Start dev server
+npm run dev
 
-      // Other configs...
-    ],
-    languageOptions: {
-      parserOptions: {
-        project: ['./tsconfig.node.json', './tsconfig.app.json'],
-        tsconfigRootDir: import.meta.dirname,
-      },
-      // other options...
-    },
-  },
-])
+# Production build
+npm run build
 ```
 
-You can also install [eslint-plugin-react-x](https://github.com/Rel1cx/eslint-react/tree/main/packages/plugins/eslint-plugin-react-x) and [eslint-plugin-react-dom](https://github.com/Rel1cx/eslint-react/tree/main/packages/plugins/eslint-plugin-react-dom) for React-specific lint rules:
+## Database Setup
 
-```js
-// eslint.config.js
-import reactX from 'eslint-plugin-react-x'
-import reactDom from 'eslint-plugin-react-dom'
+Run the SQL migrations in order in your Supabase SQL Editor:
 
-export default defineConfig([
-  globalIgnores(['dist']),
-  {
-    files: ['**/*.{ts,tsx}'],
-    extends: [
-      // Other configs...
-      // Enable lint rules for React
-      reactX.configs['recommended-typescript'],
-      // Enable lint rules for React DOM
-      reactDom.configs.recommended,
-    ],
-    languageOptions: {
-      parserOptions: {
-        project: ['./tsconfig.node.json', './tsconfig.app.json'],
-        tsconfigRootDir: import.meta.dirname,
-      },
-      // other options...
-    },
-  },
-])
-```
+1. `supabase/migrations/001_*.sql` — Base schema
+2. `supabase/migrations/002_*.sql` — Chat system
+3. `supabase/migrations/003_*.sql` — Notifications
+4. `supabase/migrations/004_*.sql` — Sub-teams & permissions
+5. `supabase/migrations/005_restrict_profiles_rls.sql` — Profile visibility restrictions
+6. `supabase/migrations/006_notification_triggers.sql` — Auto-notification triggers
