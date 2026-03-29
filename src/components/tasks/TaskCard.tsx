@@ -23,7 +23,11 @@ export function TaskCard({ task, onSelect, isDragging }: Props) {
   return (
     <div
       onClick={() => onSelect(task)}
-      className={`cursor-pointer rounded-lg border border-gray-200 bg-white p-3 shadow-sm transition-shadow hover:shadow-md dark:border-gray-700 dark:bg-gray-800 ${
+      onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); onSelect(task) } }}
+      tabIndex={0}
+      role="button"
+      aria-label={`Task: ${task.title}, priority: ${priority.label}`}
+      className={`cursor-pointer rounded-lg border border-gray-200 bg-white p-3 shadow-sm transition-shadow hover:shadow-md focus:outline-none focus:ring-2 focus:ring-primary-500 dark:border-gray-700 dark:bg-gray-800 ${
         isDragging ? 'shadow-lg ring-2 ring-primary-500/30' : ''
       }`}
     >

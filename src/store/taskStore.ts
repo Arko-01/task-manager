@@ -61,7 +61,7 @@ export const useTaskStore = create<TaskState>((set, get) => ({
   tasks: [],
   currentTask: null,
   comments: [],
-  filters: {},
+  filters: (() => { try { return JSON.parse(localStorage.getItem('task-filters') || '{}') } catch { return {} } })(),
   loading: false,
 
   fetchTasks: async (projectId) => {
@@ -207,24 +207,45 @@ export const useTaskStore = create<TaskState>((set, get) => ({
   },
 
   updateTask: async (taskId, data) => {
-    const { error } = await supabase.from('tasks').update(data).eq('id', taskId)
-    if (!error) {
+    // Optimistic update — apply immediately, rollback on error
+    const prev = get().tasks.find((t) => t.id === taskId)
+    const prevCurrent = get().currentTask
+    set((s) => ({
+      tasks: s.tasks.map((t) => (t.id === taskId ? { ...t, ...data } : t)),
+      currentTask: s.currentTask?.id === taskId ? { ...s.currentTask, ...data } : s.currentTask,
+    }))
+    // Conflict detection: only update if updated_at matches what we last saw
+    let query = supabase.from('tasks').update(data).eq('id', taskId)
+    if (prev?.updated_at) query = query.eq('updated_at', prev.updated_at)
+    const { error, count } = await query
+    if (error && prev) {
       set((s) => ({
-        tasks: s.tasks.map((t) => (t.id === taskId ? { ...t, ...data } : t)),
-        currentTask: s.currentTask?.id === taskId ? { ...s.currentTask, ...data } : s.currentTask,
+        tasks: s.tasks.map((t) => (t.id === taskId ? prev : t)),
+        currentTask: prevCurrent,
       }))
+    } else if (count === 0 && prev) {
+      // Conflict: someone else updated this task — refetch
+      set((s) => ({
+        tasks: s.tasks.map((t) => (t.id === taskId ? prev : t)),
+        currentTask: prevCurrent,
+      }))
+      return { error: 'This task was modified by someone else. Please refresh and try again.' }
     }
     return { error: error?.message ?? null }
   },
 
   deleteTask: async (taskId) => {
+    // Optimistic delete
+    const prev = get().tasks
+    const prevCurrent = get().currentTask
+    set((s) => ({
+      tasks: s.tasks.filter((t) => t.id !== taskId),
+      currentTask: s.currentTask?.id === taskId ? null : s.currentTask,
+    }))
     const now = new Date().toISOString()
     const { error } = await supabase.from('tasks').update({ deleted_at: now }).eq('id', taskId)
-    if (!error) {
-      set((s) => ({
-        tasks: s.tasks.filter((t) => t.id !== taskId),
-        currentTask: s.currentTask?.id === taskId ? null : s.currentTask,
-      }))
+    if (error) {
+      set({ tasks: prev, currentTask: prevCurrent })
     }
     return { error: error?.message ?? null }
   },
@@ -361,6 +382,9 @@ export const useTaskStore = create<TaskState>((set, get) => ({
     return { error: error?.message ?? null }
   },
 
-  setFilters: (filters) => set({ filters }),
+  setFilters: (filters) => {
+    set({ filters })
+    try { localStorage.setItem('task-filters', JSON.stringify(filters)) } catch {}
+  },
   setCurrentTask: (task) => set({ currentTask: task }),
 }))

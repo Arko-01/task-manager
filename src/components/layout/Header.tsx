@@ -18,24 +18,30 @@ export function Header({ onToggleSidebar, onToggleChat }: HeaderProps) {
         <button
           onClick={onToggleSidebar}
           className="rounded-lg p-2 text-gray-500 hover:bg-gray-100 dark:text-gray-400 dark:hover:bg-gray-800 lg:hidden"
+          aria-label="Toggle sidebar menu"
         >
           <Menu size={18} />
         </button>
 
-        {/* Global Search */}
+        {/* Global Search - desktop */}
         <div className="relative hidden sm:block">
           <Search size={16} className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" />
           <input
             type="text"
             readOnly
             placeholder="Search... (Ctrl+K)"
-            onFocus={(e) => {
-              e.target.blur()
-              window.dispatchEvent(new CustomEvent('open-search'))
-            }}
+            onClick={() => window.dispatchEvent(new CustomEvent('open-search'))}
             className="w-64 cursor-pointer rounded-lg border border-gray-200 bg-gray-50 py-1.5 pl-9 pr-3 text-sm text-gray-900 placeholder:text-gray-400 focus:border-primary-500 focus:bg-white focus:outline-none focus:ring-1 focus:ring-primary-500 dark:border-gray-700 dark:bg-gray-800 dark:text-gray-100 dark:placeholder:text-gray-500 dark:focus:bg-gray-800"
           />
         </div>
+        {/* Mobile search button */}
+        <button
+          onClick={() => window.dispatchEvent(new CustomEvent('open-search'))}
+          className="rounded-lg p-2 text-gray-500 hover:bg-gray-100 dark:text-gray-400 dark:hover:bg-gray-800 sm:hidden"
+          aria-label="Search"
+        >
+          <Search size={18} />
+        </button>
       </div>
 
       <div className="flex items-center gap-1">
@@ -44,6 +50,7 @@ export function Header({ onToggleSidebar, onToggleChat }: HeaderProps) {
           onClick={toggleTheme}
           className="rounded-lg p-2 text-gray-500 hover:bg-gray-100 dark:text-gray-400 dark:hover:bg-gray-800"
           title={`Theme: ${theme}`}
+          aria-label={`Switch theme, current: ${theme}`}
         >
           {themeIcon}
         </button>
@@ -56,6 +63,7 @@ export function Header({ onToggleSidebar, onToggleChat }: HeaderProps) {
           <button
             onClick={onToggleChat}
             className="rounded-lg p-2 text-gray-500 hover:bg-gray-100 dark:text-gray-400 dark:hover:bg-gray-800"
+            aria-label="Toggle chat panel"
           >
             <MessageCircle size={18} />
           </button>

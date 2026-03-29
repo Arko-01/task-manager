@@ -37,6 +37,8 @@ export function NotificationDropdown() {
       <button
         onClick={() => setOpen(!open)}
         className="relative rounded-lg p-2 text-gray-500 hover:bg-gray-100 dark:text-gray-400 dark:hover:bg-gray-800"
+        aria-label={`Notifications${unreadCount > 0 ? `, ${unreadCount} unread` : ''}`}
+        aria-expanded={open}
       >
         <Bell size={18} />
         {unreadCount > 0 && (

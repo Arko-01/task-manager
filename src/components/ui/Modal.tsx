@@ -29,8 +29,8 @@ export function Modal({ open, onClose, title, children, size = 'md' }: ModalProp
   if (!open) return null
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center">
-      <div className="fixed inset-0 bg-black/40" onClick={onClose} />
+    <div className="fixed inset-0 z-50 flex items-center justify-center" role="dialog" aria-modal="true" aria-label={title || 'Dialog'}>
+      <div className="fixed inset-0 bg-black/40" onClick={onClose} aria-hidden="true" />
       <div className={`relative w-full ${sizes[size]} rounded-xl bg-white p-6 shadow-xl dark:bg-gray-900 mx-4`}>
         {title && (
           <div className="mb-4 flex items-center justify-between">

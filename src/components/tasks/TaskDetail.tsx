@@ -4,6 +4,8 @@ import { useTaskStore } from '../../store/taskStore'
 import { useToast } from '../ui/Toast'
 import { Badge } from '../ui/Badge'
 import { AssigneeSelector } from './AssigneeSelector'
+import { DependencySelector } from './DependencySelector'
+import { RecurrenceSelector } from './RecurrenceSelector'
 import { CommentList } from './CommentList'
 import { QuickAddTask } from './QuickAddTask'
 import { STATUS_CONFIG, PRIORITY_CONFIG } from '../../types'
@@ -169,6 +171,16 @@ export function TaskDetail({ task, onClose }: Props) {
 
         {/* Assignees */}
         <AssigneeSelector taskId={task.id} assignees={task.assignees || []} />
+
+        {/* Recurrence */}
+        <RecurrenceSelector
+          isRecurring={task.is_recurring}
+          pattern={task.recurrence_pattern}
+          onChange={(isRecurring, recurrence_pattern) => save({ is_recurring: isRecurring, recurrence_pattern })}
+        />
+
+        {/* Dependencies */}
+        <DependencySelector taskId={task.id} dependencies={task.dependencies || []} />
 
         {/* Sub-tasks */}
         {task.depth < 2 && (

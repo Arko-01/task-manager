@@ -1,14 +1,23 @@
 import { useState, useEffect, useRef, useCallback } from 'react'
 import { useNavigate } from 'react-router-dom'
-import { Search, FileText, X } from 'lucide-react'
+import { Search, FileText, X, Plus, Moon, Settings, Trash2 } from 'lucide-react'
 import { Modal } from '../ui/Modal'
 import { supabase } from '../../lib/supabase'
+
 interface SearchResult {
   id: string
   title: string
+  description: string | null
   status: string
   project_id: string
   project?: { id: string; name: string; emoji: string | null }
+}
+
+interface QuickAction {
+  id: string
+  label: string
+  icon: typeof Plus
+  action: () => void
 }
 
 export function GlobalSearch() {
@@ -16,9 +25,17 @@ export function GlobalSearch() {
   const [query, setQuery] = useState('')
   const [results, setResults] = useState<SearchResult[]>([])
   const [loading, setLoading] = useState(false)
+  const [selectedIndex, setSelectedIndex] = useState(0)
   const inputRef = useRef<HTMLInputElement>(null)
   const navigate = useNavigate()
   const debounceRef = useRef<ReturnType<typeof setTimeout>>(undefined)
+
+  const quickActions: QuickAction[] = [
+    { id: 'new-task', label: 'Create new task', icon: Plus, action: () => { setOpen(false); const input = document.querySelector<HTMLInputElement>('input[placeholder="Add a task..."]'); input?.focus() } },
+    { id: 'theme', label: 'Toggle theme', icon: Moon, action: () => { setOpen(false); document.querySelector<HTMLButtonElement>('[title^="Theme"]')?.click() } },
+    { id: 'settings', label: 'Go to settings', icon: Settings, action: () => { setOpen(false); navigate('/profile') } },
+    { id: 'trash', label: 'Go to trash', icon: Trash2, action: () => { setOpen(false); navigate('/trash') } },
+  ]
 
   useEffect(() => {
     const handleOpen = () => setOpen(true)
@@ -37,6 +54,7 @@ export function GlobalSearch() {
     } else {
       setQuery('')
       setResults([])
+      setSelectedIndex(0)
     }
   }, [open])
 
@@ -49,11 +67,12 @@ export function GlobalSearch() {
     setLoading(true)
     const { data } = await supabase
       .from('tasks')
-      .select('*, project:projects(id, name, emoji)')
-      .ilike('title', `%${term}%`)
+      .select('id, title, description, status, project_id, project:projects(id, name, emoji)')
       .is('deleted_at', null)
+      .or(`title.ilike.%${term}%,description.ilike.%${term}%`)
       .limit(20)
-    setResults((data as SearchResult[]) || [])
+    setResults((data as unknown as SearchResult[]) || [])
+    setSelectedIndex(0)
     setLoading(false)
   }, [])
 
@@ -68,10 +87,37 @@ export function GlobalSearch() {
     navigate(`/projects/${task.project_id}`)
   }
 
+  const filteredActions = query
+    ? quickActions.filter((a) => a.label.toLowerCase().includes(query.toLowerCase()))
+    : quickActions
+
+  const allItems = [...filteredActions.map((a) => ({ type: 'action' as const, ...a })), ...results.map((r) => ({ type: 'result' as const, ...r }))]
+
+  const handleKeyDown = (e: React.KeyboardEvent) => {
+    if (e.key === 'ArrowDown') {
+      e.preventDefault()
+      setSelectedIndex((i) => Math.min(i + 1, allItems.length - 1))
+    } else if (e.key === 'ArrowUp') {
+      e.preventDefault()
+      setSelectedIndex((i) => Math.max(i - 1, 0))
+    } else if (e.key === 'Enter' && allItems[selectedIndex]) {
+      e.preventDefault()
+      const item = allItems[selectedIndex]
+      if (item.type === 'action') (item as typeof filteredActions[0]).action()
+      else handleSelect(item as SearchResult)
+    }
+  }
+
+  const STATUS_BADGE: Record<string, string> = {
+    done: 'bg-green-100 text-green-700 dark:bg-green-900 dark:text-green-300',
+    in_progress: 'bg-blue-100 text-blue-700 dark:bg-blue-900 dark:text-blue-300',
+    on_hold: 'bg-amber-100 text-amber-700 dark:bg-amber-900 dark:text-amber-300',
+    todo: 'bg-gray-100 text-gray-700 dark:bg-gray-700 dark:text-gray-300',
+  }
+
   return (
     <Modal open={open} onClose={() => setOpen(false)} size="lg">
       <div className="space-y-3">
-        {/* Search input */}
         <div className="relative">
           <Search size={18} className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" />
           <input
@@ -79,7 +125,8 @@ export function GlobalSearch() {
             type="text"
             value={query}
             onChange={(e) => handleChange(e.target.value)}
-            placeholder="Search tasks... (Ctrl+K)"
+            onKeyDown={handleKeyDown}
+            placeholder="Search tasks or type a command..."
             className="w-full rounded-lg border border-gray-200 bg-gray-50 py-2.5 pl-10 pr-10 text-sm text-gray-900 placeholder:text-gray-400 focus:border-primary-500 focus:bg-white focus:outline-none focus:ring-1 focus:ring-primary-500 dark:border-gray-700 dark:bg-gray-800 dark:text-gray-100 dark:placeholder:text-gray-500 dark:focus:bg-gray-800"
           />
           {query && (
@@ -92,50 +139,69 @@ export function GlobalSearch() {
           )}
         </div>
 
-        {/* Results */}
         <div className="max-h-80 overflow-y-auto">
-          {loading && (
-            <div className="py-8 text-center text-sm text-gray-400">Searching...</div>
+          {/* Quick actions */}
+          {filteredActions.length > 0 && (
+            <>
+              <p className="px-3 py-1 text-[10px] font-medium uppercase tracking-wider text-gray-400">Actions</p>
+              {filteredActions.map((action, i) => (
+                <button
+                  key={action.id}
+                  onClick={action.action}
+                  className={`flex w-full items-center gap-3 rounded-lg px-3 py-2 text-left text-sm transition-colors ${
+                    selectedIndex === i ? 'bg-primary-50 dark:bg-primary-900/20' : 'hover:bg-gray-100 dark:hover:bg-gray-800'
+                  }`}
+                >
+                  <action.icon size={16} className="shrink-0 text-gray-400" />
+                  <span className="text-gray-700 dark:text-gray-300">{action.label}</span>
+                </button>
+              ))}
+            </>
           )}
 
-          {!loading && query && results.length === 0 && (
-            <div className="py-8 text-center text-sm text-gray-400">No results found</div>
+          {/* Task results */}
+          {loading && <div className="py-6 text-center text-sm text-gray-400">Searching...</div>}
+
+          {!loading && query && results.length === 0 && filteredActions.length === 0 && (
+            <div className="py-6 text-center text-sm text-gray-400">No results found</div>
           )}
 
-          {!loading && !query && (
-            <div className="py-8 text-center text-sm text-gray-400">Type to search tasks...</div>
+          {!loading && results.length > 0 && (
+            <>
+              <p className="px-3 py-1 text-[10px] font-medium uppercase tracking-wider text-gray-400">Tasks</p>
+              {results.map((task, i) => {
+                const idx = filteredActions.length + i
+                return (
+                  <button
+                    key={task.id}
+                    onClick={() => handleSelect(task)}
+                    className={`flex w-full items-center gap-3 rounded-lg px-3 py-2.5 text-left transition-colors ${
+                      selectedIndex === idx ? 'bg-primary-50 dark:bg-primary-900/20' : 'hover:bg-gray-100 dark:hover:bg-gray-800'
+                    }`}
+                  >
+                    <FileText size={16} className="shrink-0 text-gray-400" />
+                    <div className="min-w-0 flex-1">
+                      <p className="truncate text-sm font-medium text-gray-900 dark:text-gray-100">{task.title}</p>
+                      {task.project && (
+                        <p className="truncate text-xs text-gray-500 dark:text-gray-400">
+                          {task.project.emoji && `${task.project.emoji} `}{task.project.name}
+                        </p>
+                      )}
+                    </div>
+                    <span className={`shrink-0 rounded px-1.5 py-0.5 text-xs font-medium ${STATUS_BADGE[task.status] || STATUS_BADGE.todo}`}>
+                      {task.status.replace('_', ' ')}
+                    </span>
+                  </button>
+                )
+              })}
+            </>
           )}
+        </div>
 
-          {!loading && results.map((task) => (
-            <button
-              key={task.id}
-              onClick={() => handleSelect(task)}
-              className="flex w-full items-center gap-3 rounded-lg px-3 py-2.5 text-left hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors"
-            >
-              <FileText size={16} className="shrink-0 text-gray-400" />
-              <div className="min-w-0 flex-1">
-                <p className="truncate text-sm font-medium text-gray-900 dark:text-gray-100">
-                  {task.title}
-                </p>
-                {task.project && (
-                  <p className="truncate text-xs text-gray-500 dark:text-gray-400">
-                    {task.project.emoji && `${task.project.emoji} `}{task.project.name}
-                  </p>
-                )}
-              </div>
-              <span className={`shrink-0 rounded px-1.5 py-0.5 text-xs font-medium ${
-                task.status === 'done'
-                  ? 'bg-green-100 text-green-700 dark:bg-green-900 dark:text-green-300'
-                  : task.status === 'in_progress'
-                  ? 'bg-blue-100 text-blue-700 dark:bg-blue-900 dark:text-blue-300'
-                  : task.status === 'on_hold'
-                  ? 'bg-amber-100 text-amber-700 dark:bg-amber-900 dark:text-amber-300'
-                  : 'bg-gray-100 text-gray-700 dark:bg-gray-700 dark:text-gray-300'
-              }`}>
-                {task.status.replace('_', ' ')}
-              </span>
-            </button>
-          ))}
+        <div className="flex items-center gap-3 border-t border-gray-100 px-3 pt-2 text-[10px] text-gray-400 dark:border-gray-800">
+          <span><kbd className="rounded bg-gray-100 px-1 dark:bg-gray-700">↑↓</kbd> navigate</span>
+          <span><kbd className="rounded bg-gray-100 px-1 dark:bg-gray-700">↵</kbd> select</span>
+          <span><kbd className="rounded bg-gray-100 px-1 dark:bg-gray-700">esc</kbd> close</span>
         </div>
       </div>
     </Modal>

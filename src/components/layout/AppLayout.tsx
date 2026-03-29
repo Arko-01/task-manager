@@ -2,6 +2,7 @@ import { useState } from 'react'
 import { Outlet } from 'react-router-dom'
 import { Sidebar } from './Sidebar'
 import { Header } from './Header'
+import { BottomNav } from './BottomNav'
 import { ChatPanel } from '../chat/ChatPanel'
 import { GlobalSearch } from '../search/GlobalSearch'
 import { KeyboardShortcutsHelp } from '../ui/KeyboardShortcutsHelp'
@@ -35,10 +36,13 @@ export function AppLayout() {
           onToggleSidebar={() => setMobileSidebarOpen((prev) => !prev)}
           onToggleChat={() => setChatOpen((prev) => !prev)}
         />
-        <main className="flex-1 overflow-y-auto p-6">
+        <main className="flex-1 overflow-y-auto p-3 sm:p-6 pb-20 lg:pb-6">
           <Outlet />
         </main>
       </div>
+
+      {/* Mobile Bottom Nav */}
+      <BottomNav />
 
       {/* Chat Panel */}
       <ChatPanel open={chatOpen} onClose={() => setChatOpen(false)} />

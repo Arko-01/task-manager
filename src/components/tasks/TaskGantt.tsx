@@ -126,6 +126,37 @@ export function TaskGantt({ tasks, onSelectTask }: Props) {
               </div>
             )}
 
+            {/* Dependency arrows (SVG overlay) */}
+            <svg className="absolute inset-0 pointer-events-none" style={{ top: '32px', height: `${rootTasks.length * 40}px` }}>
+              {rootTasks.flatMap((task, fromIdx) =>
+                (task.dependencies || []).map((dep) => {
+                  const toIdx = rootTasks.findIndex((t) => t.id === dep.depends_on_task_id)
+                  if (toIdx === -1) return null
+                  const depTask = rootTasks[toIdx]
+                  const fromX = getPosition(task.start_date)
+                  const toX = getPosition(depTask.end_date) + getWidth(depTask.start_date, depTask.end_date)
+                  const fromY = fromIdx * 40 + 20
+                  const toY = toIdx * 40 + 20
+                  return (
+                    <g key={dep.id}>
+                      <line
+                        x1={`${toX}%`} y1={toY}
+                        x2={`${fromX}%`} y2={fromY}
+                        stroke="currentColor" strokeWidth="1.5"
+                        className="text-gray-400 dark:text-gray-500"
+                        markerEnd="url(#arrowhead)"
+                      />
+                    </g>
+                  )
+                })
+              )}
+              <defs>
+                <marker id="arrowhead" markerWidth="8" markerHeight="6" refX="8" refY="3" orient="auto">
+                  <polygon points="0 0, 8 3, 0 6" className="fill-gray-400 dark:fill-gray-500" />
+                </marker>
+              </defs>
+            </svg>
+
             {/* Bars */}
             {rootTasks.map((task) => {
               const left = getPosition(task.start_date)

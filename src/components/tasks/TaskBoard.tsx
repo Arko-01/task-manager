@@ -39,7 +39,7 @@ export function TaskBoard({ tasks, projectId, onSelectTask, onStatusChange }: Pr
   }
 
   return (
-    <div className="flex gap-4 overflow-x-auto pb-4">
+    <div className="flex flex-col sm:flex-row gap-4 sm:overflow-x-auto pb-4">
       {STATUS_ORDER.map((status) => {
         const items = columns[status]
         const config = STATUS_CONFIG[status]
@@ -47,7 +47,7 @@ export function TaskBoard({ tasks, projectId, onSelectTask, onStatusChange }: Pr
         return (
           <div
             key={status}
-            className="flex w-72 shrink-0 flex-col rounded-lg bg-gray-50 dark:bg-gray-800/50"
+            className="flex w-full sm:w-72 shrink-0 flex-col rounded-lg bg-gray-50 dark:bg-gray-800/50"
             onDrop={(e) => handleDrop(e, status)}
             onDragOver={handleDragOver}
           >

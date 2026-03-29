@@ -10,6 +10,8 @@ import { TaskGantt } from '../components/tasks/TaskGantt'
 import { TaskDetail } from '../components/tasks/TaskDetail'
 import { BulkActions } from '../components/tasks/BulkActions'
 import { QuickAddTask } from '../components/tasks/QuickAddTask'
+import { WelcomeGuide } from '../components/onboarding/WelcomeGuide'
+import { TaskListSkeleton, TaskBoardSkeleton } from '../components/ui/Skeleton'
 import type { ViewType, Task, TaskStatus } from '../types'
 
 export function DashboardPage() {
@@ -21,6 +23,12 @@ export function DashboardPage() {
   useEffect(() => {
     fetchMyTasks()
   }, [fetchMyTasks, filters])
+
+  useEffect(() => {
+    const handler = (e: Event) => setView((e as CustomEvent).detail)
+    window.addEventListener('switch-view', handler)
+    return () => window.removeEventListener('switch-view', handler)
+  }, [])
 
   const handleSelectTask = useCallback((task: Task) => {
     setCurrentTask(task)
@@ -49,6 +57,9 @@ export function DashboardPage() {
         </p>
       </div>
 
+      {/* Onboarding */}
+      {!loading && !tasks.length && <WelcomeGuide />}
+
       {/* Controls */}
       <div className="mb-4 flex flex-wrap items-center justify-between gap-3">
         <ViewToggle current={view} onChange={setView} />
@@ -61,9 +72,7 @@ export function DashboardPage() {
       </div>
 
       {/* Loading */}
-      {loading && (
-        <div className="py-12 text-center text-sm text-gray-400">Loading tasks...</div>
-      )}
+      {loading && (view === 'list' || view === 'calendar' || view === 'gantt' ? <TaskListSkeleton /> : <TaskBoardSkeleton />)}
 
       {/* Views */}
       {!loading && (

@@ -11,8 +11,10 @@ import { TaskCalendar } from '../components/tasks/TaskCalendar'
 import { TaskGantt } from '../components/tasks/TaskGantt'
 import { TaskDetail } from '../components/tasks/TaskDetail'
 import { BulkActions } from '../components/tasks/BulkActions'
+import { TaskTemplates } from '../components/tasks/TaskTemplates'
 import { ProgressBar } from '../components/ui/ProgressBar'
 import { Badge } from '../components/ui/Badge'
+import { TaskListSkeleton, TaskBoardSkeleton } from '../components/ui/Skeleton'
 import type { ViewType, Task, TaskStatus, ProjectStatus } from '../types'
 
 const PROJECT_STATUS_CONFIG: Record<ProjectStatus, { label: string; class: string }> = {
@@ -43,6 +45,12 @@ export function ProjectPage() {
       getProjectStatus(projectId).then(setProjectStatus)
     }
   }, [projectId, fetchTasks, getProjectStatus, filters])
+
+  useEffect(() => {
+    const handler = (e: Event) => setView((e as CustomEvent).detail)
+    window.addEventListener('switch-view', handler)
+    return () => window.removeEventListener('switch-view', handler)
+  }, [])
 
   const handleSelectTask = useCallback((task: Task) => setCurrentTask(task), [setCurrentTask])
 
@@ -99,11 +107,14 @@ export function ProjectPage() {
 
       {/* Controls */}
       <div className="mb-4 flex flex-wrap items-center justify-between gap-3">
-        <ViewToggle current={view} onChange={setView} />
+        <div className="flex items-center gap-2">
+          <ViewToggle current={view} onChange={setView} />
+          {projectId && <TaskTemplates projectId={projectId} onCreated={() => fetchTasks(projectId)} />}
+        </div>
         <TaskFilters showAssignee assigneeOptions={assigneeOptions} />
       </div>
 
-      {loading && <div className="py-12 text-center text-sm text-gray-400">Loading tasks...</div>}
+      {loading && (view === 'list' || view === 'calendar' || view === 'gantt' ? <TaskListSkeleton /> : <TaskBoardSkeleton />)}
 
       {!loading && (
         <>
