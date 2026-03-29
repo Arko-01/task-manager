@@ -58,7 +58,7 @@ See: C:\Users\Asus\.claude\plans\snug-stargazing-kitten.md
 - Wave 3 (UX): onboarding guide, mobile bottom nav, command palette (Ctrl+K), bulk ops (status/priority/assign/date), task templates
 - Wave 4 (polish): WCAG AA contrast, keyboard nav (Kanban cards), ARIA labels, loading skeletons
 - SQL migrations 005 + 006 applied to production Supabase
-- Migration 007 (pg_cron trash purge) — requires manual apply; needs pg_cron extension (Supabase Pro or self-hosted)
+- Migration 007 (pg_cron trash purge) — requires manual apply: enable pg_cron extension in Dashboard > Database > Extensions, then run SQL in SQL Editor
 
 ## Post-Review Fixes (March 2026) — COMPLETE
 - Panel overlap: opening Chat closes Task Detail and vice versa (AppLayout.tsx)
