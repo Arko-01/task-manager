@@ -40,11 +40,17 @@ export function Sidebar({ collapsed, onCollapse: _onCollapse }: { collapsed: boo
   const currentMember = members.find((m) => m.user_id === profile?.id)
   const isAdmin = currentMember?.role === 'admin' || currentMember?.permissions?.full_access
 
+  const [showAllProjects, setShowAllProjects] = useState(false)
+
   const sortedProjects = [...projects].sort((a, b) => {
     if (a.is_default && !b.is_default) return -1
     if (!a.is_default && b.is_default) return 1
     return new Date(a.created_at).getTime() - new Date(b.created_at).getTime()
   })
+
+  const PROJECT_COLLAPSE_LIMIT = 5
+  const visibleProjects = showAllProjects ? sortedProjects : sortedProjects.slice(0, PROJECT_COLLAPSE_LIMIT)
+  const hasMoreProjects = sortedProjects.length > PROJECT_COLLAPSE_LIMIT
 
   if (collapsed) return null
 
@@ -85,7 +91,7 @@ export function Sidebar({ collapsed, onCollapse: _onCollapse }: { collapsed: boo
               </button>
             </div>
 
-            {sortedProjects.map((project) => (
+            {visibleProjects.map((project) => (
               <div
                 key={project.id}
                 onClick={() => navigate(`/projects/${project.id}`)}
@@ -95,6 +101,15 @@ export function Sidebar({ collapsed, onCollapse: _onCollapse }: { collapsed: boo
                 <span className="truncate">{project.name}</span>
               </div>
             ))}
+
+            {hasMoreProjects && (
+              <button
+                onClick={() => setShowAllProjects(!showAllProjects)}
+                className="flex items-center gap-2 px-3 py-1.5 text-xs text-gray-400 hover:text-gray-600 dark:text-gray-500 dark:hover:text-gray-300"
+              >
+                {showAllProjects ? 'Show less' : `Show all (${sortedProjects.length})`}
+              </button>
+            )}
 
             {!projects.length && (
               <p className="px-3 py-2 text-xs text-gray-400 dark:text-gray-500">No projects yet</p>

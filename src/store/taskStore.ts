@@ -2,12 +2,15 @@ import { create } from 'zustand'
 import { supabase } from '../lib/supabase'
 import type { Task, TaskStatus, TaskPriority, TaskAssignee, Comment } from '../types'
 
+export type TaskSort = 'position' | 'end_date' | 'priority' | 'title' | 'created_at'
+
 interface TaskFilters {
   status?: TaskStatus
   priority?: TaskPriority
   assignee_id?: string
   search?: string
   responsibility?: 'primary' | 'secondary' | 'all'
+  sort?: TaskSort
 }
 
 interface TaskState {
@@ -66,14 +69,17 @@ export const useTaskStore = create<TaskState>((set, get) => ({
 
   fetchTasks: async (projectId) => {
     set({ loading: true })
+    const { filters } = get()
+    const sortCol = filters.sort || 'position'
+    const ascending = sortCol !== 'priority'
+
     let query = supabase
       .from('tasks')
       .select('*, project:projects(id, name, emoji, team_id, start_date, end_date)')
       .eq('project_id', projectId)
       .is('deleted_at', null)
-      .order('position')
+      .order(sortCol, { ascending })
 
-    const { filters } = get()
     if (filters.status) query = query.eq('status', filters.status)
     if (filters.priority) query = query.eq('priority', filters.priority)
     if (filters.search) query = query.ilike('title', `%${filters.search}%`)
@@ -110,12 +116,15 @@ export const useTaskStore = create<TaskState>((set, get) => ({
 
     if (!taskIds.length) { set({ tasks: [], loading: false }); return }
 
+    const sortCol = filters.sort || 'end_date'
+    const ascending = sortCol !== 'priority'
+
     let query = supabase
       .from('tasks')
       .select('*, project:projects(id, name, emoji, team_id, start_date, end_date)')
       .in('id', taskIds)
       .is('deleted_at', null)
-      .order('end_date')
+      .order(sortCol, { ascending })
 
     if (filters.status) query = query.eq('status', filters.status)
     if (filters.priority) query = query.eq('priority', filters.priority)
@@ -136,14 +145,16 @@ export const useTaskStore = create<TaskState>((set, get) => ({
     if (!projects?.length) { set({ tasks: [], loading: false }); return }
 
     const projectIds = projects.map((p) => p.id)
+    const { filters } = get()
+    const sortCol = filters.sort || 'end_date'
+    const ascending = sortCol !== 'priority'
+
     let query = supabase
       .from('tasks')
       .select('*, project:projects(id, name, emoji, team_id, start_date, end_date)')
       .in('project_id', projectIds)
       .is('deleted_at', null)
-      .order('end_date')
-
-    const { filters } = get()
+      .order(sortCol, { ascending })
     if (filters.status) query = query.eq('status', filters.status)
     if (filters.priority) query = query.eq('priority', filters.priority)
     if (filters.search) query = query.ilike('title', `%${filters.search}%`)
@@ -340,6 +351,31 @@ export const useTaskStore = create<TaskState>((set, get) => ({
   },
 
   addDependency: async (taskId, dependsOnTaskId) => {
+    if (taskId === dependsOnTaskId) return { error: 'A task cannot depend on itself.' }
+
+    // Cycle detection: walk the dependency graph from dependsOnTaskId to see if we reach taskId
+    const { data: allDeps } = await supabase
+      .from('task_dependencies')
+      .select('task_id, depends_on_task_id')
+    if (allDeps) {
+      const depMap = new Map<string, string[]>()
+      for (const d of allDeps) {
+        const list = depMap.get(d.task_id) || []
+        list.push(d.depends_on_task_id)
+        depMap.set(d.task_id, list)
+      }
+      // BFS: starting from dependsOnTaskId, follow its dependencies
+      const visited = new Set<string>()
+      const queue = [dependsOnTaskId]
+      while (queue.length) {
+        const current = queue.shift()!
+        if (current === taskId) return { error: 'This would create a circular dependency.' }
+        if (visited.has(current)) continue
+        visited.add(current)
+        for (const dep of depMap.get(current) || []) queue.push(dep)
+      }
+    }
+
     const { error } = await supabase.from('task_dependencies').insert({
       task_id: taskId, depends_on_task_id: dependsOnTaskId, type: 'blocked_by',
     })

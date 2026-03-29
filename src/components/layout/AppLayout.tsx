@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useState, useCallback, useEffect } from 'react'
 import { Outlet } from 'react-router-dom'
 import { Sidebar } from './Sidebar'
 import { Header } from './Header'
@@ -7,11 +7,36 @@ import { ChatPanel } from '../chat/ChatPanel'
 import { GlobalSearch } from '../search/GlobalSearch'
 import { KeyboardShortcutsHelp } from '../ui/KeyboardShortcutsHelp'
 import { useKeyboardShortcuts } from '../../hooks/useKeyboardShortcuts'
+import { useTaskStore } from '../../store/taskStore'
 
 export function AppLayout() {
   useKeyboardShortcuts()
   const [mobileSidebarOpen, setMobileSidebarOpen] = useState(false)
   const [chatOpen, setChatOpen] = useState(false)
+
+  // Close chat when task detail opens
+  useEffect(() => {
+    let prev = useTaskStore.getState().currentTask
+    const unsub = useTaskStore.subscribe((state) => {
+      if (state.currentTask && state.currentTask !== prev) setChatOpen(false)
+      prev = state.currentTask
+    })
+    return unsub
+  }, [])
+
+  const handleToggleChat = useCallback(() => {
+    setChatOpen((prev) => {
+      if (!prev) useTaskStore.getState().setCurrentTask(null)
+      return !prev
+    })
+  }, [])
+
+  // Listen for toggle-chat events from BottomNav
+  useEffect(() => {
+    const handler = () => handleToggleChat()
+    window.addEventListener('toggle-chat', handler)
+    return () => window.removeEventListener('toggle-chat', handler)
+  }, [handleToggleChat])
 
   return (
     <div className="flex h-screen bg-gray-50 dark:bg-gray-950">
@@ -34,7 +59,7 @@ export function AppLayout() {
       <div className="flex flex-1 flex-col overflow-hidden">
         <Header
           onToggleSidebar={() => setMobileSidebarOpen((prev) => !prev)}
-          onToggleChat={() => setChatOpen((prev) => !prev)}
+          onToggleChat={handleToggleChat}
         />
         <main className="flex-1 overflow-y-auto p-3 sm:p-6 pb-20 lg:pb-6">
           <Outlet />

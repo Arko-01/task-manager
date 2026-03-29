@@ -21,7 +21,7 @@ Design philosophy: **Notion-like minimalism** — clean whitespace, subtle borde
 - `src/pages/` — Route pages (Login, Signup, Dashboard, TeamDashboard, Project, Admin, Profile, Trash)
 - `src/lib/supabase.ts` — Supabase client
 - `src/types/` — TypeScript interfaces
-- `supabase/migrations/` — SQL schema and RLS policy migrations (001-006)
+- `supabase/migrations/` — SQL schema and RLS policy migrations (001-007)
 - `supabase/functions/` — Edge Functions (create-team, invite-member, reorder-tasks, etc.)
 
 ## Database
@@ -31,6 +31,8 @@ Design philosophy: **Notion-like minimalism** — clean whitespace, subtle borde
 - PostgREST FK joins on messages table must use explicit FK: `profiles!messages_sender_id_fkey`
 - PostgREST does NOT support raw SQL subqueries in `.not()` filters — use separate queries instead
 - Optimistic updates with conflict detection via `updated_at` column on tasks
+- Dependency cycle detection via BFS graph walk before inserting (prevents circular deps)
+- Trash auto-purge: migration 007 schedules pg_cron job to delete tasks trashed 30+ days (requires Supabase Pro or self-hosted)
 
 ## Test Accounts (on production Supabase)
 - Admin: uat.tester@test.com / UatTest123!
@@ -56,3 +58,16 @@ See: C:\Users\Asus\.claude\plans\snug-stargazing-kitten.md
 - Wave 3 (UX): onboarding guide, mobile bottom nav, command palette (Ctrl+K), bulk ops (status/priority/assign/date), task templates
 - Wave 4 (polish): WCAG AA contrast, keyboard nav (Kanban cards), ARIA labels, loading skeletons
 - SQL migrations 005 + 006 applied to production Supabase
+- Migration 007 (pg_cron trash purge) — requires manual apply; needs pg_cron extension (Supabase Pro or self-hosted)
+
+## Post-Review Fixes (March 2026) — COMPLETE
+- Panel overlap: opening Chat closes Task Detail and vice versa (AppLayout.tsx)
+- Chat added to mobile bottom navigation via custom event bridge (BottomNav.tsx + AppLayout.tsx)
+- Sidebar project list collapses to first 5 with "Show all" toggle (Sidebar.tsx)
+- Bulk date operations: added -7d, -1d presets and custom day input (BulkActions.tsx)
+- Sort options: position, due date, priority, title, created — wired to all fetch queries (taskStore.ts + TaskFilters.tsx)
+- Dependency cycle detection: BFS graph walk blocks circular dependencies (taskStore.ts)
+- Last admin protection: blocks removing or demoting the last team admin (teamStore.ts)
+- Member removal cleanup: unassigns removed member from all team tasks (teamStore.ts)
+- Calendar click-to-create: clicking a date shows inline task creation form (TaskCalendar.tsx + ProjectPage.tsx)
+- Trash purge cron: migration 007 for pg_cron 30-day auto-delete (supabase/migrations/007)

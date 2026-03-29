@@ -1,11 +1,13 @@
 import { useMemo } from 'react'
 import FullCalendar from '@fullcalendar/react'
 import dayGridPlugin from '@fullcalendar/daygrid'
+import interactionPlugin from '@fullcalendar/interaction'
 import type { Task } from '../../types'
 
 interface Props {
   tasks: Task[]
   onSelectTask: (task: Task) => void
+  onDateClick?: (date: string) => void
 }
 
 const PRIORITY_COLORS: Record<number, string> = {
@@ -15,7 +17,7 @@ const PRIORITY_COLORS: Record<number, string> = {
   4: '#9ca3af', // gray
 }
 
-export function TaskCalendar({ tasks, onSelectTask }: Props) {
+export function TaskCalendar({ tasks, onSelectTask, onDateClick }: Props) {
   const rootTasks = useMemo(() => tasks.filter((t) => !t.parent_id), [tasks])
 
   const events = useMemo(
@@ -36,7 +38,7 @@ export function TaskCalendar({ tasks, onSelectTask }: Props) {
   return (
     <div className="rounded-lg border border-gray-200 bg-white p-4 dark:border-gray-800 dark:bg-gray-900 task-calendar">
       <FullCalendar
-        plugins={[dayGridPlugin]}
+        plugins={[dayGridPlugin, interactionPlugin]}
         initialView="dayGridMonth"
         events={events}
         headerToolbar={{
@@ -49,6 +51,7 @@ export function TaskCalendar({ tasks, onSelectTask }: Props) {
           const task = info.event.extendedProps.task as Task
           onSelectTask(task)
         }}
+        dateClick={onDateClick ? (info) => onDateClick(info.dateStr) : undefined}
         eventDisplay="block"
         dayMaxEvents={3}
       />

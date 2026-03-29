@@ -2,6 +2,10 @@ import { create } from 'zustand'
 import { supabase } from '../lib/supabase'
 import type { Team, TeamMember, SubTeam } from '../types'
 
+function getAdminCount(members: TeamMember[]) {
+  return members.filter((m) => m.role === 'admin').length
+}
+
 interface TeamState {
   teams: Team[]
   currentTeam: Team | null
@@ -151,6 +155,23 @@ export const useTeamStore = create<TeamState>((set, get) => ({
     const team = get().currentTeam
     if (!team) return { error: 'No team selected' }
 
+    // Prevent removing the last admin
+    const member = get().members.find((m) => m.user_id === userId)
+    if (member?.role === 'admin' && getAdminCount(get().members) <= 1) {
+      return { error: 'Cannot remove the last admin. Promote another member first.' }
+    }
+
+    // Unassign the member from all tasks in this team before removing
+    const { data: projects } = await supabase.from('projects').select('id').eq('team_id', team.id)
+    if (projects?.length) {
+      const projectIds = projects.map((p) => p.id)
+      const { data: tasks } = await supabase.from('tasks').select('id').in('project_id', projectIds).is('deleted_at', null)
+      if (tasks?.length) {
+        const taskIds = tasks.map((t) => t.id)
+        await supabase.from('task_assignees').delete().in('task_id', taskIds).eq('user_id', userId)
+      }
+    }
+
     const { error } = await supabase
       .from('team_members')
       .delete()
@@ -164,6 +185,12 @@ export const useTeamStore = create<TeamState>((set, get) => ({
   },
 
   updateMemberRole: async (memberId, role, permissions) => {
+    // Prevent demoting the last admin
+    const member = get().members.find((m) => m.id === memberId)
+    if (member?.role === 'admin' && role !== 'admin' && getAdminCount(get().members) <= 1) {
+      return { error: 'Cannot demote the last admin. Promote another member first.' }
+    }
+
     const update: Record<string, unknown> = { role }
     if (permissions) update.permissions = permissions
     const { error } = await supabase.from('team_members').update(update).eq('id', memberId)

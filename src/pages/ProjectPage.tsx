@@ -15,6 +15,7 @@ import { TaskTemplates } from '../components/tasks/TaskTemplates'
 import { ProgressBar } from '../components/ui/ProgressBar'
 import { Badge } from '../components/ui/Badge'
 import { TaskListSkeleton, TaskBoardSkeleton } from '../components/ui/Skeleton'
+import { useToast } from '../components/ui/Toast'
 import type { ViewType, Task, TaskStatus, ProjectStatus } from '../types'
 
 const PROJECT_STATUS_CONFIG: Record<ProjectStatus, { label: string; class: string }> = {
@@ -28,14 +29,18 @@ const PROJECT_STATUS_CONFIG: Record<ProjectStatus, { label: string; class: strin
 export function ProjectPage() {
   const { projectId } = useParams<{ projectId: string }>()
   const { projects, getProjectStatus } = useProjectStore()
-  const { tasks, loading, fetchTasks, updateTask, setCurrentTask, currentTask, filters } = useTaskStore()
+  const { tasks, loading, fetchTasks, updateTask, createTask, setCurrentTask, currentTask, filters } = useTaskStore()
   const { members } = useTeamStore()
   const [view, setView] = useState<ViewType>('list')
   const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set())
+  const [calendarDate, setCalendarDate] = useState<string | null>(null)
+  const [calendarTitle, setCalendarTitle] = useState('')
   const [projectStatus, setProjectStatus] = useState<{ status: ProjectStatus; progress: number }>({
     status: 'not_started',
     progress: 0,
   })
+
+  const { showToast } = useToast()
 
   const project = projects.find((p) => p.id === projectId)
 
@@ -124,7 +129,42 @@ export function ProjectPage() {
           {view === 'board' && (
             <TaskBoard tasks={tasks} projectId={projectId} onSelectTask={handleSelectTask} onStatusChange={handleStatusChange} />
           )}
-          {view === 'calendar' && <TaskCalendar tasks={tasks} onSelectTask={handleSelectTask} />}
+          {view === 'calendar' && (
+            <>
+              <TaskCalendar tasks={tasks} onSelectTask={handleSelectTask} onDateClick={(date) => setCalendarDate(date)} />
+              {calendarDate && projectId && (
+                <div className="mt-3 flex items-center gap-2 rounded-lg border border-primary-200 bg-primary-50 px-3 py-2 dark:border-primary-800 dark:bg-primary-900/20">
+                  <span className="text-xs text-gray-500 dark:text-gray-400 shrink-0">New task on {calendarDate}:</span>
+                  <form onSubmit={async (e) => {
+                    e.preventDefault()
+                    if (!calendarTitle.trim()) return
+                    const { error } = await createTask({
+                      project_id: projectId,
+                      title: calendarTitle.trim(),
+                      start_date: calendarDate,
+                      end_date: calendarDate,
+                    })
+                    if (error) { showToast(error, 'error') } else {
+                      setCalendarTitle('')
+                      setCalendarDate(null)
+                      fetchTasks(projectId)
+                    }
+                  }} className="flex flex-1 gap-2">
+                    <input
+                      autoFocus
+                      type="text"
+                      value={calendarTitle}
+                      onChange={(e) => setCalendarTitle(e.target.value)}
+                      placeholder="Task title..."
+                      className="flex-1 rounded border border-gray-200 bg-white px-2 py-1 text-sm dark:border-gray-600 dark:bg-gray-800 dark:text-gray-100 focus:outline-none focus:border-primary-500"
+                    />
+                    <button type="submit" className="rounded bg-primary-500 px-3 py-1 text-xs font-medium text-white hover:bg-primary-600">Add</button>
+                    <button type="button" onClick={() => { setCalendarDate(null); setCalendarTitle('') }} className="text-xs text-gray-400 hover:text-gray-600 dark:hover:text-gray-300">Cancel</button>
+                  </form>
+                </div>
+              )}
+            </>
+          )}
           {view === 'gantt' && <TaskGantt tasks={tasks} onSelectTask={handleSelectTask} />}
         </>
       )}

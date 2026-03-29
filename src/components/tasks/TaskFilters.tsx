@@ -1,7 +1,16 @@
 import { Search, X } from 'lucide-react'
 import { useTaskStore } from '../../store/taskStore'
+import type { TaskSort } from '../../store/taskStore'
 import { STATUS_CONFIG, PRIORITY_CONFIG } from '../../types'
 import type { TaskStatus, TaskPriority } from '../../types'
+
+const SORT_OPTIONS: { value: TaskSort; label: string }[] = [
+  { value: 'position', label: 'Manual order' },
+  { value: 'end_date', label: 'Due date' },
+  { value: 'priority', label: 'Priority' },
+  { value: 'title', label: 'Title' },
+  { value: 'created_at', label: 'Created' },
+]
 
 interface Props {
   showResponsibility?: boolean
@@ -80,6 +89,18 @@ export function TaskFilters({ showResponsibility, showAssignee, assigneeOptions 
           ))}
         </select>
       )}
+
+      {/* Sort */}
+      <select
+        value={filters.sort || ''}
+        onChange={(e) => setFilters({ ...filters, sort: (e.target.value || undefined) as TaskSort | undefined })}
+        className="rounded-lg border border-gray-200 bg-white px-2 py-1.5 text-xs text-gray-700 focus:border-primary-500 focus:outline-none dark:border-gray-700 dark:bg-gray-800 dark:text-gray-300"
+      >
+        <option value="">Default sort</option>
+        {SORT_OPTIONS.map((o) => (
+          <option key={o.value} value={o.value}>{o.label}</option>
+        ))}
+      </select>
 
       {/* Clear */}
       {hasFilters && (

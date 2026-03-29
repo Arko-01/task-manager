@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useState, useRef } from 'react'
 import { X } from 'lucide-react'
 import { useTaskStore } from '../../store/taskStore'
 import { useTeamStore } from '../../store/teamStore'
@@ -18,6 +18,9 @@ export function BulkActions({ selectedIds, onClear }: Props) {
   const count = selectedIds.size
   const [showAssign, setShowAssign] = useState(false)
   const [showPriority, setShowPriority] = useState(false)
+  const [showDateShift, setShowDateShift] = useState(false)
+  const [customDays, setCustomDays] = useState('')
+  const customDaysRef = useRef<HTMLInputElement>(null)
 
   if (!count) return null
 
@@ -112,8 +115,37 @@ export function BulkActions({ selectedIds, onClear }: Props) {
       </div>
 
       {/* Date shift */}
-      <button onClick={() => handleDateShift(1)} className="rounded-lg px-2 py-1 text-xs font-medium text-gray-600 hover:bg-gray-100 dark:text-gray-400 dark:hover:bg-gray-700">+1d</button>
-      <button onClick={() => handleDateShift(7)} className="rounded-lg px-2 py-1 text-xs font-medium text-gray-600 hover:bg-gray-100 dark:text-gray-400 dark:hover:bg-gray-700">+7d</button>
+      <div className="relative">
+        <button onClick={() => { setShowDateShift(!showDateShift); setShowAssign(false); setShowPriority(false) }} className="rounded-lg px-2 py-1 text-xs font-medium text-gray-600 hover:bg-gray-100 dark:text-gray-400 dark:hover:bg-gray-700">
+          Shift Dates
+        </button>
+        {showDateShift && (
+          <div className="absolute bottom-full left-0 mb-1 rounded-lg border border-gray-200 bg-white py-1 shadow-lg dark:border-gray-700 dark:bg-gray-800 w-36">
+            {[-7, -1, 1, 7].map((d) => (
+              <button key={d} onClick={() => { handleDateShift(d); setShowDateShift(false) }} className="flex w-full items-center px-3 py-1.5 text-xs hover:bg-gray-50 dark:hover:bg-gray-700 text-gray-700 dark:text-gray-300">
+                {d > 0 ? `+${d}` : d} day{Math.abs(d) !== 1 ? 's' : ''}
+              </button>
+            ))}
+            <div className="border-t border-gray-100 dark:border-gray-700 mt-1 pt-1 px-2 pb-1">
+              <form onSubmit={(e) => {
+                e.preventDefault()
+                const val = parseInt(customDays)
+                if (!isNaN(val) && val !== 0) { handleDateShift(val); setShowDateShift(false); setCustomDays('') }
+              }} className="flex gap-1">
+                <input
+                  ref={customDaysRef}
+                  type="number"
+                  value={customDays}
+                  onChange={(e) => setCustomDays(e.target.value)}
+                  placeholder="Custom"
+                  className="w-16 rounded border border-gray-200 px-1.5 py-1 text-xs dark:border-gray-600 dark:bg-gray-700 dark:text-gray-200"
+                />
+                <button type="submit" className="rounded bg-primary-500 px-2 py-1 text-xs text-white hover:bg-primary-600">Go</button>
+              </form>
+            </div>
+          </div>
+        )}
+      </div>
 
       <div className="h-4 w-px bg-gray-200 dark:bg-gray-700" />
       <button onClick={handleDelete} className="rounded-lg px-2 py-1 text-xs font-medium text-red-600 hover:bg-red-50 dark:text-red-400 dark:hover:bg-red-900/20">Delete</button>

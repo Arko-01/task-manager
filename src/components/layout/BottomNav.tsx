@@ -1,5 +1,5 @@
 import { useNavigate, useLocation } from 'react-router-dom'
-import { LayoutDashboard, Inbox, Search, Bell, User } from 'lucide-react'
+import { LayoutDashboard, Inbox, Search, Bell, MessageCircle } from 'lucide-react'
 import { useNotificationStore } from '../../store/notificationStore'
 import { useTeamStore } from '../../store/teamStore'
 
@@ -13,8 +13,8 @@ export function BottomNav() {
     { path: '/', icon: LayoutDashboard, label: 'Tasks' },
     ...(currentTeam ? [{ path: '/team', icon: Inbox, label: 'Team' }] : []),
     { path: '#search', icon: Search, label: 'Search', action: () => window.dispatchEvent(new CustomEvent('open-search')) },
+    { path: '#chat', icon: MessageCircle, label: 'Chat', action: () => window.dispatchEvent(new CustomEvent('toggle-chat')) },
     { path: '#notif', icon: Bell, label: 'Alerts', badge: unreadCount },
-    { path: '/profile', icon: User, label: 'Profile' },
   ]
 
   return (
