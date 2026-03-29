@@ -128,7 +128,17 @@ export function TaskDetail({ task, onClose }: Props) {
             <input
               type="date"
               value={startDate}
-              onChange={(e) => { setStartDate(e.target.value); save({ start_date: e.target.value }) }}
+              onChange={(e) => {
+                const newStart = e.target.value
+                setStartDate(newStart)
+                if (endDate && newStart > endDate) {
+                  setEndDate(newStart)
+                  save({ start_date: newStart, end_date: newStart })
+                } else {
+                  save({ start_date: newStart })
+                }
+              }}
+              max={endDate || undefined}
               className="w-full rounded-lg border border-gray-200 bg-white px-2 py-1.5 text-sm dark:border-gray-700 dark:bg-gray-800 dark:text-gray-100"
             />
           </div>
@@ -138,7 +148,7 @@ export function TaskDetail({ task, onClose }: Props) {
               type="date"
               value={endDate}
               onChange={(e) => { setEndDate(e.target.value); save({ end_date: e.target.value }) }}
-              min={startDate}
+              min={startDate || undefined}
               className="w-full rounded-lg border border-gray-200 bg-white px-2 py-1.5 text-sm dark:border-gray-700 dark:bg-gray-800 dark:text-gray-100"
             />
           </div>

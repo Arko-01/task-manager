@@ -19,28 +19,31 @@ export function TrashPage() {
     let cancelled = false
     const fetchDeleted = async () => {
       setLoading(true)
-      const { data: projects } = await supabase
-        .from('projects')
-        .select('id')
-        .eq('team_id', currentTeam.id)
+      try {
+        const { data: projects } = await supabase
+          .from('projects')
+          .select('id')
+          .eq('team_id', currentTeam.id)
 
-      if (cancelled) return
-      if (!projects?.length) { setDeletedTasks([]); setLoading(false); return }
+        if (cancelled) return
+        if (!projects?.length) { setDeletedTasks([]); return }
 
-      const { data } = await supabase
-        .from('tasks')
-        .select('*, project:projects(id, name, emoji)')
-        .in('project_id', projects.map((p) => p.id))
-        .not('deleted_at', 'is', null)
-        .order('deleted_at', { ascending: false })
+        const { data } = await supabase
+          .from('tasks')
+          .select('*, project:projects(id, name, emoji)')
+          .in('project_id', projects.map((p) => p.id))
+          .not('deleted_at', 'is', null)
+          .order('deleted_at', { ascending: false })
 
-      if (cancelled) return
-      setDeletedTasks((data as Task[]) || [])
-      setLoading(false)
+        if (cancelled) return
+        setDeletedTasks((data as Task[]) || [])
+      } finally {
+        if (!cancelled) setLoading(false)
+      }
     }
     fetchDeleted()
     return () => { cancelled = true }
-  }, [currentTeam])
+  }, [currentTeam?.id])
 
   const handleRestore = async (taskId: string) => {
     const { error } = await restoreTask(taskId)

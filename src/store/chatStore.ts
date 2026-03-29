@@ -42,39 +42,35 @@ export const useChatStore = create<ChatState>((set, get) => ({
 
     if (!convs) { set({ conversations: [] }); return }
 
-    // Get members and last message for each
-    for (const conv of convs) {
-      const { data: members } = await supabase
+    // Batch: fetch all members and recent messages in parallel instead of per-conversation
+    const [{ data: allMembers }, { data: allMessages }, { data: allOtherMsgs }, { data: allReads }] = await Promise.all([
+      supabase
         .from('conversation_members')
         .select('*, profile:profiles(*)')
-        .eq('conversation_id', conv.id)
-      conv.members = members || []
-
-      const { data: lastMsg } = await supabase
+        .in('conversation_id', convIds),
+      supabase
         .from('messages')
         .select('*, sender:profiles!messages_sender_id_fkey(*)')
-        .eq('conversation_id', conv.id)
-        .order('created_at', { ascending: false })
-        .limit(1)
-      conv.last_message = lastMsg?.[0] || null
-
-      // Unread count: get non-self message IDs, then check which are read
-      const { data: otherMsgs } = await supabase
+        .in('conversation_id', convIds)
+        .order('created_at', { ascending: false }),
+      supabase
         .from('messages')
-        .select('id')
-        .eq('conversation_id', conv.id)
-        .neq('sender_id', user.id)
+        .select('id, conversation_id')
+        .in('conversation_id', convIds)
+        .neq('sender_id', user.id),
+      supabase
+        .from('message_reads')
+        .select('message_id')
+        .eq('user_id', user.id),
+    ])
 
-      if (otherMsgs?.length) {
-        const { count: readCount } = await supabase
-          .from('message_reads')
-          .select('message_id', { count: 'exact', head: true })
-          .eq('user_id', user.id)
-          .in('message_id', otherMsgs.map((m) => m.id))
-        conv.unread_count = otherMsgs.length - (readCount || 0)
-      } else {
-        conv.unread_count = 0
-      }
+    const readSet = new Set((allReads || []).map((r) => r.message_id))
+
+    for (const conv of convs) {
+      conv.members = (allMembers || []).filter((m) => m.conversation_id === conv.id)
+      conv.last_message = (allMessages || []).find((m) => m.conversation_id === conv.id) || null
+      const otherMsgs = (allOtherMsgs || []).filter((m) => m.conversation_id === conv.id)
+      conv.unread_count = otherMsgs.filter((m) => !readSet.has(m.id)).length
     }
 
     set({ conversations: convs as Conversation[] })

@@ -4,15 +4,15 @@ import { useNotificationStore } from '../../store/notificationStore'
 import { useNavigate } from 'react-router-dom'
 
 export function NotificationDropdown() {
-  const { notifications, unreadCount, fetchNotifications, markRead, markAllRead, subscribeToNotifications } = useNotificationStore()
+  const { notifications, unreadCount, markRead, markAllRead } = useNotificationStore()
   const [open, setOpen] = useState(false)
   const navigate = useNavigate()
 
   useEffect(() => {
-    fetchNotifications()
-    const unsub = subscribeToNotifications()
+    useNotificationStore.getState().fetchNotifications()
+    const unsub = useNotificationStore.getState().subscribeToNotifications()
     return unsub
-  }, [fetchNotifications, subscribeToNotifications])
+  }, [])
 
   const formatTime = (d: string) => {
     const date = new Date(d)

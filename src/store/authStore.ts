@@ -9,6 +9,7 @@ interface AuthState {
   session: Session | null
   loading: boolean
   initialized: boolean
+  _authSubscription: { unsubscribe: () => void } | null
   signUp: (email: string, password: string, fullName: string) => Promise<{ error: string | null }>
   signIn: (email: string, password: string) => Promise<{ error: string | null }>
   signOut: () => Promise<void>
@@ -23,12 +24,16 @@ export const useAuthStore = create<AuthState>((set, get) => ({
   session: null,
   loading: false,
   initialized: false,
+  _authSubscription: null,
 
   initialize: async () => {
     if (!isSupabaseConfigured) {
       set({ initialized: true })
       return
     }
+
+    // Clean up any existing listener before creating a new one
+    get()._authSubscription?.unsubscribe()
 
     try {
       const { data: { session } } = await supabase.auth.getSession()
@@ -41,7 +46,7 @@ export const useAuthStore = create<AuthState>((set, get) => ({
     }
     set({ initialized: true })
 
-    supabase.auth.onAuthStateChange(async (_event, session) => {
+    const { data: { subscription } } = supabase.auth.onAuthStateChange(async (_event, session) => {
       set({ user: session?.user ?? null, session })
       if (session?.user) {
         await get().fetchProfile(session.user.id)
@@ -49,6 +54,7 @@ export const useAuthStore = create<AuthState>((set, get) => ({
         set({ profile: null })
       }
     })
+    set({ _authSubscription: subscription })
   },
 
   fetchProfile: async (userId: string) => {

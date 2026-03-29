@@ -16,7 +16,7 @@ interface Props {
 }
 
 export function ChatPanel({ open, onClose }: Props) {
-  const { conversations, currentConversation, messages, fetchConversations, selectConversation, sendMessage, createDirectConversation, createGroupConversation, subscribeToMessages } = useChatStore()
+  const { conversations, currentConversation, messages, fetchConversations, selectConversation, sendMessage, createDirectConversation, createGroupConversation } = useChatStore()
   const { members } = useTeamStore()
   const { profile } = useAuthStore()
   const { showToast } = useToast()
@@ -33,10 +33,10 @@ export function ChatPanel({ open, onClose }: Props) {
 
   useEffect(() => {
     if (currentConversation) {
-      const unsub = subscribeToMessages()
+      const unsub = useChatStore.getState().subscribeToMessages()
       return unsub
     }
-  }, [currentConversation, subscribeToMessages])
+  }, [currentConversation?.id])
 
   useEffect(() => {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' })
