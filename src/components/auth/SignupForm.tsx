@@ -9,41 +9,73 @@ export function SignupForm({ onSwitchToLogin }: { onSwitchToLogin: () => void })
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
   const [confirmPassword, setConfirmPassword] = useState('')
+  const [errors, setErrors] = useState<{ fullName?: string; email?: string; password?: string; confirmPassword?: string; form?: string }>({})
   const { signUp, loading } = useAuthStore()
   const { toast } = useToast()
 
+  const clearError = (field: string) => {
+    setErrors((prev) => ({ ...prev, [field]: undefined, form: undefined }))
+  }
+
+  const validate = () => {
+    const newErrors: typeof errors = {}
+    if (!fullName.trim()) newErrors.fullName = 'Full name is required'
+    if (!email.trim()) {
+      newErrors.email = 'Email is required'
+    } else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
+      newErrors.email = 'Please enter a valid email address'
+    }
+    if (!password) {
+      newErrors.password = 'Password is required'
+    } else if (password.length < 6) {
+      newErrors.password = 'Password must be at least 6 characters'
+    }
+    if (!confirmPassword) {
+      newErrors.confirmPassword = 'Please confirm your password'
+    } else if (password !== confirmPassword) {
+      newErrors.confirmPassword = 'Passwords do not match'
+    }
+    return newErrors
+  }
+
   const handleSubmit = async (e: FormEvent) => {
     e.preventDefault()
-    if (password !== confirmPassword) {
-      toast('Passwords do not match', 'error')
+    setErrors({})
+
+    const validationErrors = validate()
+    if (Object.keys(validationErrors).length > 0) {
+      setErrors(validationErrors)
       return
     }
-    if (password.length < 6) {
-      toast('Password must be at least 6 characters', 'error')
-      return
-    }
+
     const { error } = await signUp(email, password, fullName)
     if (error) {
-      toast(error, 'error')
+      setErrors({ form: error })
     } else {
       toast('Account created! Check your email to confirm.', 'success')
     }
   }
 
   return (
-    <form onSubmit={handleSubmit} className="space-y-4">
+    <form onSubmit={handleSubmit} className="space-y-4" noValidate>
       <div className="text-center mb-8">
         <h1 className="text-2xl font-semibold text-gray-900 dark:text-gray-100">Create account</h1>
         <p className="text-sm text-gray-500 dark:text-gray-400 mt-1">Get started with your team</p>
       </div>
 
+      {errors.form && (
+        <div className="rounded-lg bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 px-4 py-3 text-sm text-red-700 dark:text-red-400">
+          {errors.form}
+        </div>
+      )}
+
       <Input
         label="Full name"
         type="text"
         value={fullName}
-        onChange={(e) => setFullName(e.target.value)}
+        onChange={(e) => { setFullName(e.target.value); clearError('fullName') }}
         placeholder="Your full name"
-        required
+        error={errors.fullName}
         autoFocus
       />
 
@@ -51,28 +83,27 @@ export function SignupForm({ onSwitchToLogin }: { onSwitchToLogin: () => void })
         label="Email"
         type="email"
         value={email}
-        onChange={(e) => setEmail(e.target.value)}
+        onChange={(e) => { setEmail(e.target.value); clearError('email') }}
         placeholder="you@example.com"
-        required
+        error={errors.email}
       />
 
       <Input
         label="Password"
         type="password"
         value={password}
-        onChange={(e) => setPassword(e.target.value)}
+        onChange={(e) => { setPassword(e.target.value); clearError('password') }}
         placeholder="At least 6 characters"
-        required
-        minLength={6}
+        error={errors.password}
       />
 
       <Input
         label="Confirm password"
         type="password"
         value={confirmPassword}
-        onChange={(e) => setConfirmPassword(e.target.value)}
+        onChange={(e) => { setConfirmPassword(e.target.value); clearError('confirmPassword') }}
         placeholder="Confirm your password"
-        required
+        error={errors.confirmPassword}
       />
 
       <Button type="submit" disabled={loading} className="w-full">

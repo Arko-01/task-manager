@@ -157,14 +157,14 @@ export function Sidebar({ collapsed, onCollapse: _onCollapse }: { collapsed: boo
           </div>
           <button
             onClick={() => navigate('/profile')}
-            className="text-gray-400 hover:text-gray-600 dark:hover:text-gray-300"
+            className="p-1.5 rounded-md text-gray-400 hover:text-gray-600 hover:bg-gray-100 dark:hover:text-gray-300 dark:hover:bg-gray-800 transition-colors"
             title="Profile"
           >
             <User size={16} />
           </button>
           <button
             onClick={signOut}
-            className="text-gray-400 hover:text-gray-600 dark:hover:text-gray-300"
+            className="p-1.5 rounded-md text-gray-400 hover:text-gray-600 hover:bg-gray-100 dark:hover:text-gray-300 dark:hover:bg-gray-800 transition-colors"
             title="Sign out"
           >
             <LogOut size={16} />

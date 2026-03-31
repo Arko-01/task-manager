@@ -9,9 +9,10 @@ import type { TaskAssignee } from '../../types'
 interface Props {
   taskId: string
   assignees: TaskAssignee[]
+  readOnly?: boolean
 }
 
-export function AssigneeSelector({ taskId, assignees }: Props) {
+export function AssigneeSelector({ taskId, assignees, readOnly }: Props) {
   const [showPicker, setShowPicker] = useState(false)
   const { members } = useTeamStore()
   const { addAssignee, removeAssignee, updateAssigneeRole } = useTaskStore()
@@ -43,12 +44,14 @@ export function AssigneeSelector({ taskId, assignees }: Props) {
         <label className="text-xs font-medium uppercase tracking-wider text-gray-400 dark:text-gray-500">
           Assignees
         </label>
-        <button
-          onClick={() => setShowPicker(!showPicker)}
-          className="rounded p-1 text-gray-400 hover:bg-gray-100 hover:text-gray-600 dark:hover:bg-gray-800 dark:hover:text-gray-300"
-        >
-          <Plus size={14} />
-        </button>
+        {!readOnly && (
+          <button
+            onClick={() => setShowPicker(!showPicker)}
+            className="rounded p-1 text-gray-400 hover:bg-gray-100 hover:text-gray-600 dark:hover:bg-gray-800 dark:hover:text-gray-300"
+          >
+            <Plus size={14} />
+          </button>
+        )}
       </div>
 
       {/* Current assignees */}
@@ -59,22 +62,24 @@ export function AssigneeSelector({ taskId, assignees }: Props) {
             <span className="flex-1 truncate text-sm text-gray-700 dark:text-gray-300">
               {a.profile?.full_name || 'Unknown'}
             </span>
-            <button
-              onClick={() => handleToggleRole(a.user_id, a.role)}
+            <span
+              onClick={!readOnly ? () => handleToggleRole(a.user_id, a.role) : undefined}
               className={`rounded px-1.5 py-0.5 text-xs font-medium ${
                 a.role === 'primary'
                   ? 'bg-primary-100 text-primary-700 dark:bg-primary-900/30 dark:text-primary-300'
                   : 'bg-gray-100 text-gray-600 dark:bg-gray-700 dark:text-gray-400'
-              }`}
+              } ${!readOnly ? 'cursor-pointer' : ''}`}
             >
               {a.role === 'primary' ? 'P' : 'S'}
-            </button>
-            <button
-              onClick={() => handleRemove(a.user_id)}
-              className="text-gray-300 hover:text-red-500 dark:text-gray-600 dark:hover:text-red-400"
-            >
-              <X size={12} />
-            </button>
+            </span>
+            {!readOnly && (
+              <button
+                onClick={() => handleRemove(a.user_id)}
+                className="text-gray-300 hover:text-red-500 dark:text-gray-600 dark:hover:text-red-400"
+              >
+                <X size={12} />
+              </button>
+            )}
           </div>
         ))}
       </div>

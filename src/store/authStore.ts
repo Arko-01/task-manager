@@ -85,8 +85,18 @@ export const useAuthStore = create<AuthState>((set, get) => ({
   },
 
   signOut: async () => {
-    await supabase.auth.signOut()
-    set({ user: null, profile: null, session: null })
+    try {
+      // Clean up auth listener before signing out
+      get()._authSubscription?.unsubscribe()
+      set({ _authSubscription: null })
+      await supabase.auth.signOut()
+    } catch {
+      // Even if signOut API fails, clear local state
+    } finally {
+      set({ user: null, profile: null, session: null })
+      // Force redirect to login — handles edge cases where auth listener doesn't fire
+      window.location.href = '/login'
+    }
   },
 
   updateProfile: async (data) => {

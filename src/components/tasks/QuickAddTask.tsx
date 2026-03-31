@@ -3,6 +3,7 @@ import { Plus } from 'lucide-react'
 import { useTaskStore } from '../../store/taskStore'
 import { useProjectStore } from '../../store/projectStore'
 import { useToast } from '../ui/Toast'
+import { usePermissions } from '../../hooks/usePermissions'
 import type { TaskStatus } from '../../types'
 
 interface Props {
@@ -13,6 +14,8 @@ interface Props {
 }
 
 export function QuickAddTask({ projectId, parentId, status = 'todo', onCreated }: Props) {
+  const { can } = usePermissions()
+  if (!can('create_tasks')) return null
   const [title, setTitle] = useState('')
   const [loading, setLoading] = useState(false)
   const [showProjectPicker, setShowProjectPicker] = useState(false)

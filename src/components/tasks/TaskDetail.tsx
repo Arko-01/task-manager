@@ -8,6 +8,7 @@ import { DependencySelector } from './DependencySelector'
 import { RecurrenceSelector } from './RecurrenceSelector'
 import { CommentList } from './CommentList'
 import { QuickAddTask } from './QuickAddTask'
+import { usePermissions } from '../../hooks/usePermissions'
 import { STATUS_CONFIG, PRIORITY_CONFIG } from '../../types'
 import type { Task, TaskStatus, TaskPriority } from '../../types'
 
@@ -19,6 +20,9 @@ interface Props {
 export function TaskDetail({ task, onClose }: Props) {
   const { updateTask, deleteTask, duplicateTask } = useTaskStore()
   const { showToast } = useToast()
+  const { can, canEditTask } = usePermissions()
+  const canEdit = canEditTask(task.created_by)
+  const canDelete = can('delete_tasks')
   const [title, setTitle] = useState(task.title)
   const [description, setDescription] = useState(task.description || '')
   const [status, setStatus] = useState(task.status)
@@ -72,12 +76,16 @@ export function TaskDetail({ task, onClose }: Props) {
           )}
         </div>
         <div className="flex items-center gap-1">
-          <button onClick={handleDuplicate} className="rounded-lg p-1.5 text-gray-400 hover:bg-gray-100 hover:text-gray-600 dark:hover:bg-gray-800" title="Duplicate">
-            <Copy size={16} />
-          </button>
-          <button onClick={handleDelete} className="rounded-lg p-1.5 text-gray-400 hover:bg-red-50 hover:text-red-500 dark:hover:bg-red-900/20" title="Delete">
-            <Trash2 size={16} />
-          </button>
+          {canEdit && (
+            <button onClick={handleDuplicate} className="rounded-lg p-1.5 text-gray-400 hover:bg-gray-100 hover:text-gray-600 dark:hover:bg-gray-800" title="Duplicate">
+              <Copy size={16} />
+            </button>
+          )}
+          {canDelete && (
+            <button onClick={handleDelete} className="rounded-lg p-1.5 text-gray-400 hover:bg-red-50 hover:text-red-500 dark:hover:bg-red-900/20" title="Delete">
+              <Trash2 size={16} />
+            </button>
+          )}
           <button onClick={onClose} className="rounded-lg p-1.5 text-gray-400 hover:bg-gray-100 hover:text-gray-600 dark:hover:bg-gray-800">
             <X size={16} />
           </button>
@@ -92,7 +100,8 @@ export function TaskDetail({ task, onClose }: Props) {
           value={title}
           onChange={(e) => setTitle(e.target.value)}
           onBlur={handleTitleBlur}
-          className="w-full text-lg font-semibold text-gray-900 bg-transparent focus:outline-none dark:text-gray-100"
+          readOnly={!canEdit}
+          className={`w-full text-lg font-semibold text-gray-900 bg-transparent focus:outline-none dark:text-gray-100 ${!canEdit ? 'cursor-default' : ''}`}
         />
 
         {/* Status & Priority row */}
@@ -102,7 +111,8 @@ export function TaskDetail({ task, onClose }: Props) {
             <select
               value={status}
               onChange={(e) => { setStatus(e.target.value as TaskStatus); save({ status: e.target.value as TaskStatus }) }}
-              className="w-full rounded-lg border border-gray-200 bg-white px-2 py-1.5 text-sm dark:border-gray-700 dark:bg-gray-800 dark:text-gray-100"
+              disabled={!canEdit}
+              className={`w-full rounded-lg border border-gray-200 bg-white px-2 py-1.5 text-sm dark:border-gray-700 dark:bg-gray-800 dark:text-gray-100 ${!canEdit ? 'opacity-60 cursor-not-allowed' : ''}`}
             >
               {Object.entries(STATUS_CONFIG).map(([k, v]) => (
                 <option key={k} value={k}>{v.label}</option>
@@ -114,7 +124,8 @@ export function TaskDetail({ task, onClose }: Props) {
             <select
               value={priority}
               onChange={(e) => { const p = Number(e.target.value) as TaskPriority; setPriority(p); save({ priority: p }) }}
-              className="w-full rounded-lg border border-gray-200 bg-white px-2 py-1.5 text-sm dark:border-gray-700 dark:bg-gray-800 dark:text-gray-100"
+              disabled={!canEdit}
+              className={`w-full rounded-lg border border-gray-200 bg-white px-2 py-1.5 text-sm dark:border-gray-700 dark:bg-gray-800 dark:text-gray-100 ${!canEdit ? 'opacity-60 cursor-not-allowed' : ''}`}
             >
               {Object.entries(PRIORITY_CONFIG).map(([k, v]) => (
                 <option key={k} value={k}>{v.label}</option>
@@ -141,7 +152,8 @@ export function TaskDetail({ task, onClose }: Props) {
                 }
               }}
               max={endDate || undefined}
-              className="w-full rounded-lg border border-gray-200 bg-white px-2 py-1.5 text-sm dark:border-gray-700 dark:bg-gray-800 dark:text-gray-100"
+              disabled={!canEdit}
+              className={`w-full rounded-lg border border-gray-200 bg-white px-2 py-1.5 text-sm dark:border-gray-700 dark:bg-gray-800 dark:text-gray-100 ${!canEdit ? 'opacity-60 cursor-not-allowed' : ''}`}
             />
           </div>
           <div className="space-y-1">
@@ -151,7 +163,8 @@ export function TaskDetail({ task, onClose }: Props) {
               value={endDate}
               onChange={(e) => { setEndDate(e.target.value); save({ end_date: e.target.value }) }}
               min={startDate || undefined}
-              className="w-full rounded-lg border border-gray-200 bg-white px-2 py-1.5 text-sm dark:border-gray-700 dark:bg-gray-800 dark:text-gray-100"
+              disabled={!canEdit}
+              className={`w-full rounded-lg border border-gray-200 bg-white px-2 py-1.5 text-sm dark:border-gray-700 dark:bg-gray-800 dark:text-gray-100 ${!canEdit ? 'opacity-60 cursor-not-allowed' : ''}`}
             />
           </div>
         </div>
@@ -163,24 +176,29 @@ export function TaskDetail({ task, onClose }: Props) {
             value={description}
             onChange={(e) => setDescription(e.target.value)}
             onBlur={handleDescBlur}
-            placeholder="Add a description..."
+            placeholder={canEdit ? "Add a description..." : "No description"}
             rows={3}
-            className="w-full rounded-lg border border-gray-200 bg-white px-3 py-2 text-sm text-gray-900 placeholder:text-gray-400 focus:border-primary-500 focus:outline-none dark:border-gray-700 dark:bg-gray-800 dark:text-gray-100 dark:placeholder:text-gray-500"
+            readOnly={!canEdit}
+            className={`w-full rounded-lg border border-gray-200 bg-white px-3 py-2 text-sm text-gray-900 placeholder:text-gray-400 focus:border-primary-500 focus:outline-none dark:border-gray-700 dark:bg-gray-800 dark:text-gray-100 dark:placeholder:text-gray-500 ${!canEdit ? 'opacity-60 cursor-default' : ''}`}
           />
         </div>
 
         {/* Assignees */}
-        <AssigneeSelector taskId={task.id} assignees={task.assignees || []} />
+        <AssigneeSelector taskId={task.id} assignees={task.assignees || []} readOnly={!canEdit} />
 
         {/* Recurrence */}
-        <RecurrenceSelector
-          isRecurring={task.is_recurring}
-          pattern={task.recurrence_pattern}
-          onChange={(isRecurring, recurrence_pattern) => save({ is_recurring: isRecurring, recurrence_pattern })}
-        />
+        {canEdit && (
+          <RecurrenceSelector
+            isRecurring={task.is_recurring}
+            pattern={task.recurrence_pattern}
+            onChange={(isRecurring, recurrence_pattern) => save({ is_recurring: isRecurring, recurrence_pattern })}
+          />
+        )}
 
         {/* Dependencies */}
-        <DependencySelector taskId={task.id} dependencies={task.dependencies || []} />
+        {canEdit && (
+          <DependencySelector taskId={task.id} dependencies={task.dependencies || []} />
+        )}
 
         {/* Sub-tasks */}
         {task.depth < 2 && (
@@ -195,7 +213,7 @@ export function TaskDetail({ task, onClose }: Props) {
                 <span className={st.status === 'done' ? 'line-through text-gray-400' : ''}>{st.title}</span>
               </div>
             ))}
-            <QuickAddTask projectId={task.project_id} parentId={task.id} />
+            {canEdit && <QuickAddTask projectId={task.project_id} parentId={task.id} />}
           </div>
         )}
 

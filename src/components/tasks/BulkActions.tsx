@@ -3,6 +3,7 @@ import { X } from 'lucide-react'
 import { useTaskStore } from '../../store/taskStore'
 import { useTeamStore } from '../../store/teamStore'
 import { useToast } from '../ui/Toast'
+import { usePermissions } from '../../hooks/usePermissions'
 import { STATUS_CONFIG, PRIORITY_CONFIG } from '../../types'
 import type { TaskStatus, TaskPriority } from '../../types'
 
@@ -14,6 +15,7 @@ interface Props {
 export function BulkActions({ selectedIds, onClear }: Props) {
   const { updateTask, deleteTask, addAssignee } = useTaskStore()
   const { members } = useTeamStore()
+  const { can } = usePermissions()
   const { showToast } = useToast()
   const count = selectedIds.size
   const [showAssign, setShowAssign] = useState(false)
@@ -148,7 +150,7 @@ export function BulkActions({ selectedIds, onClear }: Props) {
       </div>
 
       <div className="h-4 w-px bg-gray-200 dark:bg-gray-700" />
-      <button onClick={handleDelete} className="rounded-lg px-2 py-1 text-xs font-medium text-red-600 hover:bg-red-50 dark:text-red-400 dark:hover:bg-red-900/20">Delete</button>
+      {can('delete_tasks') && <button onClick={handleDelete} className="rounded-lg px-2 py-1 text-xs font-medium text-red-600 hover:bg-red-50 dark:text-red-400 dark:hover:bg-red-900/20">Delete</button>}
       <button onClick={onClear} className="rounded p-1 text-gray-400 hover:text-gray-600 dark:hover:text-gray-300"><X size={14} /></button>
     </div>
   )
