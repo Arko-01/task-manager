@@ -65,7 +65,7 @@ export function TaskDetail({ task, onClose }: Props) {
   }
 
   return (
-    <div className="fixed inset-y-0 right-0 z-30 w-full max-w-md border-l border-gray-200 bg-white shadow-xl dark:border-gray-800 dark:bg-gray-900 flex flex-col">
+    <div className="fixed inset-y-0 right-0 z-30 w-full max-w-md border-l border-gray-200 bg-white shadow-xl dark:border-gray-800 dark:bg-gray-900 flex flex-col" role="dialog" aria-label={`Task details: ${task.title}`}>
       {/* Header */}
       <div className="flex items-center justify-between border-b border-gray-200 px-4 py-3 dark:border-gray-800">
         <div className="flex items-center gap-2">
@@ -86,7 +86,7 @@ export function TaskDetail({ task, onClose }: Props) {
               <Trash2 size={16} />
             </button>
           )}
-          <button onClick={onClose} className="rounded-lg p-1.5 text-gray-400 hover:bg-gray-100 hover:text-gray-600 dark:hover:bg-gray-800">
+          <button onClick={onClose} className="rounded-lg p-1.5 text-gray-400 hover:bg-gray-100 hover:text-gray-600 dark:hover:bg-gray-800" aria-label="Close task details">
             <X size={16} />
           </button>
         </div>
@@ -101,6 +101,7 @@ export function TaskDetail({ task, onClose }: Props) {
           onChange={(e) => setTitle(e.target.value)}
           onBlur={handleTitleBlur}
           readOnly={!canEdit}
+          aria-label="Task title"
           className={`w-full text-lg font-semibold text-gray-900 bg-transparent focus:outline-none dark:text-gray-100 ${!canEdit ? 'cursor-default' : ''}`}
         />
 

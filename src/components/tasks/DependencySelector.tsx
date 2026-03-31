@@ -50,6 +50,7 @@ export function DependencySelector({ taskId, dependencies }: Props) {
           <span className="text-[10px] text-gray-400">blocked by</span>
           <button
             onClick={() => handleRemove(dep.id)}
+            aria-label={`Remove dependency: ${dep.depends_on_task?.title || 'Unknown task'}`}
             className="text-gray-300 hover:text-red-500 dark:text-gray-600 dark:hover:text-red-400"
           >
             <X size={12} />
@@ -72,6 +73,7 @@ export function DependencySelector({ taskId, dependencies }: Props) {
             value={search}
             onChange={(e) => setSearch(e.target.value)}
             placeholder="Search tasks..."
+            aria-label="Search tasks to add as dependency"
             autoFocus
             className="w-full rounded-lg border border-gray-200 bg-white px-2 py-1.5 text-xs focus:border-primary-500 focus:outline-none dark:border-gray-700 dark:bg-gray-800 dark:text-gray-100"
           />
@@ -80,6 +82,7 @@ export function DependencySelector({ taskId, dependencies }: Props) {
               <button
                 key={t.id}
                 onClick={() => handleAdd(t.id)}
+                aria-label={`Add dependency: ${t.title}`}
                 className="flex w-full items-center gap-2 px-2 py-1.5 text-left text-xs hover:bg-gray-50 dark:hover:bg-gray-700"
               >
                 <span className="truncate text-gray-700 dark:text-gray-300">{t.title}</span>

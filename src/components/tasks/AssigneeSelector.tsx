@@ -75,6 +75,7 @@ export function AssigneeSelector({ taskId, assignees, readOnly }: Props) {
             {!readOnly && (
               <button
                 onClick={() => handleRemove(a.user_id)}
+                aria-label={`Remove ${a.profile?.full_name || 'assignee'}`}
                 className="text-gray-300 hover:text-red-500 dark:text-gray-600 dark:hover:text-red-400"
               >
                 <X size={12} />

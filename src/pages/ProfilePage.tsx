@@ -91,6 +91,8 @@ export function ProfilePage() {
               <button
                 key={t}
                 onClick={() => setTheme(t)}
+                aria-label={`Set theme to ${t}`}
+                aria-pressed={theme === t}
                 className={`rounded-lg px-3 py-1.5 text-sm font-medium capitalize transition-colors ${
                   theme === t
                     ? 'bg-primary-50 text-primary-700 dark:bg-primary-900/30 dark:text-primary-300'
@@ -121,6 +123,7 @@ export function ProfilePage() {
                   type="checkbox"
                   checked={pref.in_app}
                   onChange={() => toggleNotifPref(type.key, 'in_app')}
+                  aria-label={`Toggle ${type.label} notifications`}
                   className="peer sr-only"
                 />
                 <div className="h-5 w-9 rounded-full bg-gray-200 after:absolute after:left-[2px] after:top-[2px] after:h-4 after:w-4 after:rounded-full after:bg-white after:transition-all peer-checked:bg-primary-600 peer-checked:after:translate-x-full dark:bg-gray-700" />
@@ -138,6 +141,7 @@ export function ProfilePage() {
                 type="checkbox"
                 checked={notifPrefs?.quiet_hours_enabled || false}
                 onChange={() => notifPrefs && saveNotifPrefs({ ...notifPrefs, quiet_hours_enabled: !notifPrefs.quiet_hours_enabled })}
+                aria-label="Toggle quiet hours"
                 className="peer sr-only"
               />
               <div className="h-5 w-9 rounded-full bg-gray-200 after:absolute after:left-[2px] after:top-[2px] after:h-4 after:w-4 after:rounded-full after:bg-white after:transition-all peer-checked:bg-primary-600 peer-checked:after:translate-x-full dark:bg-gray-700" />
@@ -149,6 +153,7 @@ export function ProfilePage() {
                 type="time"
                 value={notifPrefs.quiet_hours_start || '22:00'}
                 onChange={(e) => saveNotifPrefs({ ...notifPrefs, quiet_hours_start: e.target.value })}
+                aria-label="Quiet hours start time"
                 className="rounded border border-gray-200 px-2 py-1 text-xs dark:border-gray-700 dark:bg-gray-800 dark:text-gray-100"
               />
               <span className="text-xs text-gray-500">to</span>
@@ -156,6 +161,7 @@ export function ProfilePage() {
                 type="time"
                 value={notifPrefs.quiet_hours_end || '08:00'}
                 onChange={(e) => saveNotifPrefs({ ...notifPrefs, quiet_hours_end: e.target.value })}
+                aria-label="Quiet hours end time"
                 className="rounded border border-gray-200 px-2 py-1 text-xs dark:border-gray-700 dark:bg-gray-800 dark:text-gray-100"
               />
             </div>

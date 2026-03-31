@@ -62,6 +62,8 @@ export function QuickAddTask({ projectId, parentId, status = 'todo', onCreated }
             <button
               type="button"
               onClick={() => setShowProjectPicker(!showProjectPicker)}
+              aria-label={selectedProject ? `Project: ${selectedProject.name}` : 'Select project'}
+              aria-expanded={showProjectPicker}
               className="shrink-0 rounded bg-gray-100 px-2 py-0.5 text-xs font-medium text-gray-600 hover:bg-gray-200 dark:bg-gray-700 dark:text-gray-300 dark:hover:bg-gray-600"
             >
               {selectedProject ? `${selectedProject.emoji || '📁'} ${selectedProject.name}` : 'Select Project'}
@@ -91,6 +93,7 @@ export function QuickAddTask({ projectId, parentId, status = 'todo', onCreated }
           value={title}
           onChange={(e) => setTitle(e.target.value)}
           placeholder="Add a task..."
+          aria-label="New task title"
           className="flex-1 bg-transparent text-sm text-gray-900 placeholder:text-gray-400 focus:outline-none dark:text-gray-100 dark:placeholder:text-gray-500"
           disabled={loading}
         />
