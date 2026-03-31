@@ -35,6 +35,7 @@ export function TaskFilters({ showResponsibility, showAssignee, assigneeOptions 
           value={filters.search || ''}
           onChange={(e) => setFilters({ ...filters, search: e.target.value || undefined })}
           placeholder="Filter tasks..."
+          aria-label="Filter tasks by keyword"
           className="w-40 rounded-lg border border-gray-200 bg-white py-1.5 pl-8 pr-3 text-xs text-gray-900 placeholder:text-gray-400 focus:border-primary-500 focus:outline-none dark:border-gray-700 dark:bg-gray-800 dark:text-gray-100 dark:placeholder:text-gray-500"
         />
       </div>
@@ -43,6 +44,7 @@ export function TaskFilters({ showResponsibility, showAssignee, assigneeOptions 
       <select
         value={filters.status || ''}
         onChange={(e) => setFilters({ ...filters, status: (e.target.value || undefined) as TaskStatus | undefined })}
+        aria-label="Filter by status"
         className="rounded-lg border border-gray-200 bg-white px-2 py-1.5 text-xs text-gray-700 focus:border-primary-500 focus:outline-none dark:border-gray-700 dark:bg-gray-800 dark:text-gray-300"
       >
         <option value="">All Status</option>
@@ -55,6 +57,7 @@ export function TaskFilters({ showResponsibility, showAssignee, assigneeOptions 
       <select
         value={filters.priority ?? ''}
         onChange={(e) => setFilters({ ...filters, priority: (e.target.value ? Number(e.target.value) : undefined) as TaskPriority | undefined })}
+        aria-label="Filter by priority"
         className="rounded-lg border border-gray-200 bg-white px-2 py-1.5 text-xs text-gray-700 focus:border-primary-500 focus:outline-none dark:border-gray-700 dark:bg-gray-800 dark:text-gray-300"
       >
         <option value="">All Priority</option>
@@ -68,6 +71,7 @@ export function TaskFilters({ showResponsibility, showAssignee, assigneeOptions 
         <select
           value={filters.responsibility || 'all'}
           onChange={(e) => setFilters({ ...filters, responsibility: e.target.value as 'primary' | 'secondary' | 'all' })}
+          aria-label="Filter by role"
           className="rounded-lg border border-gray-200 bg-white px-2 py-1.5 text-xs text-gray-700 focus:border-primary-500 focus:outline-none dark:border-gray-700 dark:bg-gray-800 dark:text-gray-300"
         >
           <option value="all">All Roles</option>
@@ -81,6 +85,7 @@ export function TaskFilters({ showResponsibility, showAssignee, assigneeOptions 
         <select
           value={filters.assignee_id || ''}
           onChange={(e) => setFilters({ ...filters, assignee_id: e.target.value || undefined })}
+          aria-label="Filter by assignee"
           className="rounded-lg border border-gray-200 bg-white px-2 py-1.5 text-xs text-gray-700 focus:border-primary-500 focus:outline-none dark:border-gray-700 dark:bg-gray-800 dark:text-gray-300"
         >
           <option value="">All Assignees</option>
@@ -94,6 +99,7 @@ export function TaskFilters({ showResponsibility, showAssignee, assigneeOptions 
       <select
         value={filters.sort || ''}
         onChange={(e) => setFilters({ ...filters, sort: (e.target.value || undefined) as TaskSort | undefined })}
+        aria-label="Sort tasks"
         className="rounded-lg border border-gray-200 bg-white px-2 py-1.5 text-xs text-gray-700 focus:border-primary-500 focus:outline-none dark:border-gray-700 dark:bg-gray-800 dark:text-gray-300"
       >
         <option value="">Default sort</option>

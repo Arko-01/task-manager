@@ -41,7 +41,7 @@ export function AssigneeSelector({ taskId, assignees, readOnly }: Props) {
   return (
     <div className="space-y-2">
       <div className="flex items-center justify-between">
-        <label className="text-xs font-medium uppercase tracking-wider text-gray-400 dark:text-gray-500">
+        <label className="text-xs font-medium uppercase tracking-wider text-gray-500 dark:text-gray-400">
           Assignees
         </label>
         {!readOnly && (

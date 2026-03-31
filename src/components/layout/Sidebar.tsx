@@ -79,7 +79,7 @@ export function Sidebar({ collapsed, onCollapse: _onCollapse }: { collapsed: boo
         {currentTeam && (
           <div className="pt-6">
             <div className="flex items-center justify-between px-3 mb-2">
-              <span className="text-xs font-medium uppercase tracking-wider text-gray-400 dark:text-gray-500">
+              <span className="text-xs font-medium uppercase tracking-wider text-gray-500 dark:text-gray-400">
                 Projects
               </span>
               <button

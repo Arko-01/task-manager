@@ -37,7 +37,7 @@ export function DependencySelector({ taskId, dependencies }: Props) {
 
   return (
     <div className="space-y-2">
-      <label className="text-xs font-medium uppercase tracking-wider text-gray-400 dark:text-gray-500">
+      <label className="text-xs font-medium uppercase tracking-wider text-gray-500 dark:text-gray-400">
         Dependencies
       </label>
 

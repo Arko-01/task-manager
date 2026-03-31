@@ -38,6 +38,7 @@ export function TaskRow({ task, onSelect, onStatusChange, level = 0, selected, o
             type="checkbox"
             checked={selected}
             onChange={() => onToggleSelect(task.id)}
+            aria-label={`Select task: ${task.title}`}
             className="h-3.5 w-3.5 rounded border-gray-300 text-primary-600 focus:ring-primary-500"
           />
         )}
@@ -48,6 +49,7 @@ export function TaskRow({ task, onSelect, onStatusChange, level = 0, selected, o
         {/* Expand toggle for sub-tasks */}
         <button
           onClick={(e) => { e.stopPropagation(); setExpanded(!expanded) }}
+          aria-label={expanded ? `Collapse sub-tasks of ${task.title}` : `Expand sub-tasks of ${task.title}`}
           className={`shrink-0 ${hasSubTasks ? 'text-gray-400 hover:text-gray-600 dark:hover:text-gray-300' : 'invisible'}`}
         >
           <ChevronRight size={14} className={`transition-transform ${expanded ? 'rotate-90' : ''}`} />
@@ -63,6 +65,7 @@ export function TaskRow({ task, onSelect, onStatusChange, level = 0, selected, o
             const nextStatus = task.status === 'done' ? 'todo' : 'done'
             onStatusChange?.(task.id, nextStatus)
           }}
+          aria-label={task.status === 'done' ? `Mark "${task.title}" as todo` : `Mark "${task.title}" as done`}
           className={`flex h-4 w-4 shrink-0 items-center justify-center rounded-full border-2 transition-colors ${
             task.status === 'done'
               ? 'border-green-500 bg-green-500 text-white'

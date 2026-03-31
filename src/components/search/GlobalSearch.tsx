@@ -143,7 +143,7 @@ export function GlobalSearch() {
           {/* Quick actions */}
           {filteredActions.length > 0 && (
             <>
-              <p className="px-3 py-1 text-[10px] font-medium uppercase tracking-wider text-gray-400">Actions</p>
+              <p className="px-3 py-1 text-[10px] font-medium uppercase tracking-wider text-gray-500">Actions</p>
               {filteredActions.map((action, i) => (
                 <button
                   key={action.id}
@@ -168,7 +168,7 @@ export function GlobalSearch() {
 
           {!loading && results.length > 0 && (
             <>
-              <p className="px-3 py-1 text-[10px] font-medium uppercase tracking-wider text-gray-400">Tasks</p>
+              <p className="px-3 py-1 text-[10px] font-medium uppercase tracking-wider text-gray-500">Tasks</p>
               {results.map((task, i) => {
                 const idx = filteredActions.length + i
                 return (

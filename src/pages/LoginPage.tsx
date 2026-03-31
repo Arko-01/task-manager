@@ -11,7 +11,7 @@ export function LoginPage() {
   if (user) return <Navigate to="/" replace />
 
   return (
-    <div className="flex min-h-screen items-center justify-center bg-gray-50 px-4 dark:bg-gray-950">
+    <main className="flex min-h-screen items-center justify-center bg-gray-50 px-4 dark:bg-gray-950">
       <div className="w-full max-w-sm rounded-xl border border-gray-200 bg-white p-8 shadow-sm dark:border-gray-800 dark:bg-gray-900">
         {isSignup ? (
           <SignupForm onSwitchToLogin={() => setIsSignup(false)} />
@@ -19,6 +19,6 @@ export function LoginPage() {
           <LoginForm onSwitchToSignup={() => setIsSignup(true)} />
         )}
       </div>
-    </div>
+    </main>
   )
 }

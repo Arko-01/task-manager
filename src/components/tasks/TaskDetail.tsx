@@ -108,7 +108,7 @@ export function TaskDetail({ task, onClose }: Props) {
         {/* Status & Priority row */}
         <div className="grid grid-cols-2 gap-3">
           <div className="space-y-1">
-            <label className="text-xs font-medium uppercase tracking-wider text-gray-400 dark:text-gray-500">Status</label>
+            <label className="text-xs font-medium uppercase tracking-wider text-gray-500 dark:text-gray-400">Status</label>
             <select
               value={status}
               onChange={(e) => { setStatus(e.target.value as TaskStatus); save({ status: e.target.value as TaskStatus }) }}
@@ -121,7 +121,7 @@ export function TaskDetail({ task, onClose }: Props) {
             </select>
           </div>
           <div className="space-y-1">
-            <label className="text-xs font-medium uppercase tracking-wider text-gray-400 dark:text-gray-500">Priority</label>
+            <label className="text-xs font-medium uppercase tracking-wider text-gray-500 dark:text-gray-400">Priority</label>
             <select
               value={priority}
               onChange={(e) => { const p = Number(e.target.value) as TaskPriority; setPriority(p); save({ priority: p }) }}
@@ -138,7 +138,7 @@ export function TaskDetail({ task, onClose }: Props) {
         {/* Dates */}
         <div className="grid grid-cols-2 gap-3">
           <div className="space-y-1">
-            <label className="text-xs font-medium uppercase tracking-wider text-gray-400 dark:text-gray-500">Start Date</label>
+            <label className="text-xs font-medium uppercase tracking-wider text-gray-500 dark:text-gray-400">Start Date</label>
             <input
               type="date"
               value={startDate}
@@ -158,7 +158,7 @@ export function TaskDetail({ task, onClose }: Props) {
             />
           </div>
           <div className="space-y-1">
-            <label className="text-xs font-medium uppercase tracking-wider text-gray-400 dark:text-gray-500">End Date</label>
+            <label className="text-xs font-medium uppercase tracking-wider text-gray-500 dark:text-gray-400">End Date</label>
             <input
               type="date"
               value={endDate}
@@ -172,7 +172,7 @@ export function TaskDetail({ task, onClose }: Props) {
 
         {/* Description */}
         <div className="space-y-1">
-          <label className="text-xs font-medium uppercase tracking-wider text-gray-400 dark:text-gray-500">Description</label>
+          <label className="text-xs font-medium uppercase tracking-wider text-gray-500 dark:text-gray-400">Description</label>
           <textarea
             value={description}
             onChange={(e) => setDescription(e.target.value)}
@@ -204,7 +204,7 @@ export function TaskDetail({ task, onClose }: Props) {
         {/* Sub-tasks */}
         {task.depth < 2 && (
           <div className="space-y-2">
-            <label className="text-xs font-medium uppercase tracking-wider text-gray-400 dark:text-gray-500">
+            <label className="text-xs font-medium uppercase tracking-wider text-gray-500 dark:text-gray-400">
               Sub-tasks
             </label>
             {task.sub_tasks?.map((st) => (

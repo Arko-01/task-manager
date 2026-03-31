@@ -49,7 +49,7 @@ export function CommentList({ taskId }: Props) {
 
   return (
     <div className="space-y-3">
-      <label className="text-xs font-medium uppercase tracking-wider text-gray-400 dark:text-gray-500">
+      <label className="text-xs font-medium uppercase tracking-wider text-gray-500 dark:text-gray-400">
         Comments
       </label>
 
