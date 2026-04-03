@@ -164,10 +164,10 @@ const doc = new Document({
       // ══════════ COVER PAGE ══════════
       new Paragraph({ spacing: { before: 4000 }, alignment: AlignmentType.CENTER, children: [] }),
       new Paragraph({ alignment: AlignmentType.CENTER, spacing: { after: 200 }, children: [new TextRun({ text: 'Team Task Manager', font: FONT, size: 56, bold: true, color: COLOR_PRIMARY })] }),
-      new Paragraph({ alignment: AlignmentType.CENTER, spacing: { after: 100 }, children: [new TextRun({ text: 'Technical Reference', font: FONT, size: 36, color: COLOR_GRAY })] }),
+      new Paragraph({ alignment: AlignmentType.CENTER, spacing: { after: 100 }, children: [new TextRun({ text: 'Technical Reference & UI/UX Review Guide', font: FONT, size: 36, color: COLOR_GRAY })] }),
       new Paragraph({ alignment: AlignmentType.CENTER, spacing: { after: 600 }, children: [new TextRun({ text: 'Version 1.0 \u2014 April 2026', font: FONT, size: 22, color: '9CA3AF' })] }),
-      new Paragraph({ alignment: AlignmentType.CENTER, spacing: { after: 80 }, children: [new TextRun({ text: 'Architecture \u2022 Database \u2022 Design System \u2022 Permissions', font: FONT, size: 22, italics: true, color: COLOR_GRAY })] }),
-      new Paragraph({ alignment: AlignmentType.CENTER, children: [new TextRun({ text: 'Deployment \u2022 API Patterns \u2022 Change Log', font: FONT, size: 22, italics: true, color: COLOR_GRAY })] }),
+      new Paragraph({ alignment: AlignmentType.CENTER, spacing: { after: 80 }, children: [new TextRun({ text: 'Part A: Architecture \u2022 Database \u2022 Design System \u2022 Permissions', font: FONT, size: 22, italics: true, color: COLOR_GRAY })] }),
+      new Paragraph({ alignment: AlignmentType.CENTER, children: [new TextRun({ text: 'Part B: Screen Walkthrough \u2022 Dark Mode \u2022 Mobile \u2022 Review Checklist', font: FONT, size: 22, italics: true, color: COLOR_GRAY })] }),
       new Paragraph({ children: [new PageBreak()] }),
 
       // ══════════ TABLE OF CONTENTS ══════════
@@ -912,18 +912,292 @@ const doc = new Document({
       emptyLine(),
       emptyLine(),
 
+      // ══════════ END OF PART A ══════════
+      new Paragraph({ border: { bottom: { style: BorderStyle.SINGLE, size: 6, color: COLOR_PRIMARY, space: 1 } }, spacing: { before: 400, after: 200 }, children: [] }),
+      new Paragraph({ alignment: AlignmentType.CENTER, spacing: { after: 200 }, children: [new TextRun({ text: 'End of Part A: Technical Reference', font: FONT, size: 24, bold: true, color: COLOR_PRIMARY })] }),
+      new Paragraph({ children: [new PageBreak()] }),
+
+      // ══════════════════════════════════════════════════════
+      //  PART B: UI/UX REVIEW GUIDE
+      // ══════════════════════════════════════════════════════
+      new Paragraph({ spacing: { before: 3000 }, alignment: AlignmentType.CENTER, children: [] }),
+      new Paragraph({ alignment: AlignmentType.CENTER, spacing: { after: 200 }, children: [new TextRun({ text: 'Part B', font: FONT, size: 48, bold: true, color: COLOR_PRIMARY })] }),
+      new Paragraph({ alignment: AlignmentType.CENTER, spacing: { after: 100 }, children: [new TextRun({ text: 'UI/UX Review Guide', font: FONT, size: 36, color: COLOR_GRAY })] }),
+      new Paragraph({ alignment: AlignmentType.CENTER, spacing: { after: 600 }, children: [new TextRun({ text: 'For reviewers evaluating usability, design, and user experience', font: FONT, size: 22, italics: true, color: '9CA3AF' })] }),
+      new Paragraph({ children: [new PageBreak()] }),
+
+      // ══════════ B1: SCREEN-BY-SCREEN WALKTHROUGH ══════════
+      heading1('B1. Screen-by-Screen Walkthrough'),
+      para('This section walks through every screen in the app with screenshots and plain-language descriptions of what each screen does and why it exists.'),
+      emptyLine(),
+
+      heading2('B1.1 Login Page'),
+      para('This is the first screen users see. It has two forms that toggle between each other: Login and Sign Up.'),
+      ...img('01_login_empty', 'Login page \u2014 clean, centered form with email and password fields'),
+      para('What\u2019s here: Email field, password field, "Log In" button, and a "Sign up" link at the bottom to switch to registration.'),
+      emptyLine(),
+      para('If a user submits the form with missing or invalid fields, inline error messages appear under each field:'),
+      ...img('02_login_validation_errors', 'Validation errors shown per field \u2014 no browser popups'),
+      emptyLine(),
+      para('If the email/password combination is wrong, an error banner appears at the top of the form:'),
+      ...img('03_login_invalid_credentials', 'Server error \u2014 "Invalid email or password" banner'),
+      emptyLine(),
+
+      heading2('B1.2 Sign Up Page'),
+      para('New users create an account here. Fields: full name, email, password, confirm password.'),
+      ...img('04_signup_form', 'Sign-up form \u2014 same minimalist style as login'),
+      ...img('05_signup_validation_errors', 'Sign-up validation \u2014 all fields validated with specific messages'),
+      new Paragraph({ children: [new PageBreak()] }),
+
+      heading2('B1.3 Dashboard (My Tasks)'),
+      para('The main landing page after login. Shows all tasks assigned to the current user across every project. This is the personal task hub.'),
+      emptyLine(),
+      para('What you see:'),
+      new Paragraph({ numbering: { reference: 'bullets', level: 0 }, children: [new TextRun({ text: 'Sidebar (left) \u2014 navigation, projects, team tools', font: FONT, size: 21 })] }),
+      new Paragraph({ numbering: { reference: 'bullets', level: 0 }, children: [new TextRun({ text: 'Header (top) \u2014 search, theme toggle, notifications bell, chat toggle', font: FONT, size: 21 })] }),
+      new Paragraph({ numbering: { reference: 'bullets', level: 0 }, children: [new TextRun({ text: 'View tabs \u2014 List, Board, Calendar, Gantt', font: FONT, size: 21 })] }),
+      new Paragraph({ numbering: { reference: 'bullets', level: 0 }, children: [new TextRun({ text: 'Filter bar \u2014 search, status, priority, sort', font: FONT, size: 21 })] }),
+      new Paragraph({ numbering: { reference: 'bullets', level: 0 }, children: [new TextRun({ text: 'Quick-add bar \u2014 type a task name and press Enter', font: FONT, size: 21 })] }),
+      new Paragraph({ numbering: { reference: 'bullets', level: 0 }, children: [new TextRun({ text: 'Task list \u2014 grouped by status (To Do, In Progress, On Hold, Done)', font: FONT, size: 21 })] }),
+      ...img('06_dashboard_list_view', 'Dashboard \u2014 List View (default landing page)'),
+      new Paragraph({ children: [new PageBreak()] }),
+
+      heading2('B1.4 The Four Task Views'),
+      para('Users can switch between 4 ways of looking at their tasks. Each view shows the same data differently.'),
+      emptyLine(),
+      heading3('List View'),
+      para('Default view. Tasks in rows grouped by status. Each row shows priority dot, title, status badge, assignee avatars, due date, and sub-task count. Checkboxes on the left for bulk selection.'),
+      ...img('06_dashboard_list_view', 'List View \u2014 rows grouped by status'),
+      emptyLine(),
+      heading3('Board View (Kanban)'),
+      para('Tasks as cards in 4 columns: To Do, In Progress, On Hold, Done. Drag a card between columns to change its status.'),
+      ...img('07_dashboard_board_view', 'Board View \u2014 Kanban columns with drag-and-drop'),
+      emptyLine(),
+      heading3('Calendar View'),
+      para('Monthly calendar showing tasks as colored bars based on priority. Click a task to open details. In project pages, click an empty date to create a task on that day.'),
+      ...img('08_dashboard_calendar_view', 'Calendar View \u2014 tasks as colored bars by priority'),
+      emptyLine(),
+      heading3('Gantt View'),
+      para('Horizontal timeline showing task durations as bars. Arrows between bars show dependencies. Red vertical line marks today. Great for seeing overlaps and scheduling conflicts.'),
+      ...img('09_dashboard_gantt_view', 'Gantt View \u2014 timeline with dependency arrows'),
+      new Paragraph({ children: [new PageBreak()] }),
+
+      heading2('B1.5 Task Detail Panel'),
+      para('Clicking any task opens a slide-in panel on the right. This is where users edit everything about a task.'),
+      ...img('11_task_detail_panel', 'Task Detail \u2014 slide-in panel with all editable fields'),
+      emptyLine(),
+      para('Editable fields: title, status, priority, start/end dates, description, assignees (primary/secondary), dependencies, recurrence, sub-tasks, and comments.'),
+      emptyLine(),
+      para('Scrolling down reveals comments, dependencies, and the sub-task creation area:'),
+      ...img('12_task_detail_bottom', 'Task Detail \u2014 bottom section with comments and dependencies'),
+      new Paragraph({ children: [new PageBreak()] }),
+
+      heading2('B1.6 Quick Add & Filters'),
+      para('The Quick Add bar lets users create tasks instantly by typing a name and pressing Enter. No modal, no form \u2014 just type and go.'),
+      ...img('14_quick_add_task', 'Quick Add \u2014 inline task creation'),
+      emptyLine(),
+      para('The filter bar narrows down visible tasks by keyword search, status, priority, assignee, and sort order:'),
+      ...img('15_task_filters_bar', 'Filter bar \u2014 search, status, priority, sort dropdowns'),
+      emptyLine(),
+
+      heading2('B1.7 Bulk Actions'),
+      para('Select multiple tasks with checkboxes, then a floating toolbar appears at the bottom with options: change status, priority, assignee, shift dates, or delete.'),
+      ...img('16_bulk_actions_toolbar', 'Bulk Actions \u2014 3 tasks selected, toolbar at bottom'),
+      new Paragraph({ children: [new PageBreak()] }),
+
+      heading2('B1.8 Project Page'),
+      para('Each project has its own page showing only that project\u2019s tasks. Same 4 views available. Shows project name, emoji, status badge, progress bar, and date range.'),
+      ...img('17_project_page_list', 'Project Page \u2014 List View'),
+      ...img('18_project_board_view', 'Project Page \u2014 Kanban Board'),
+      ...img('19_project_calendar_view', 'Project Page \u2014 Calendar'),
+      ...img('20_project_gantt_view', 'Project Page \u2014 Gantt Chart'),
+      new Paragraph({ children: [new PageBreak()] }),
+
+      heading2('B1.9 Team Dashboard'),
+      para('Bird\u2019s-eye view of all team work. Shows stat cards (Total Tasks, In Progress, Overdue, Done This Week) and all tasks across every project. Has an extra "Assignee" filter to see a specific person\u2019s workload.'),
+      ...img('21_team_dashboard', 'Team Dashboard \u2014 team-wide task overview'),
+      emptyLine(),
+
+      heading2('B1.10 Chat'),
+      para('Real-time messaging without leaving the app. Supports direct (1-on-1), team, and group conversations. Messages update live via WebSocket.'),
+      ...img('22_chat_panel', 'Chat Panel \u2014 conversation list'),
+      ...img('23_chat_conversation', 'Chat \u2014 message thread'),
+      new Paragraph({ children: [new PageBreak()] }),
+
+      heading2('B1.11 Notifications'),
+      para('Bell icon in the header shows a red badge with unread count. Dropdown lists recent notifications. Click to mark as read and navigate to the related task.'),
+      para('Triggers: task assigned to you, someone comments on your task, task status changes.'),
+      ...img('24_notifications_dropdown', 'Notifications dropdown \u2014 with unread badge'),
+      emptyLine(),
+
+      heading2('B1.12 Command Palette & Shortcuts'),
+      para('Press Ctrl+K from anywhere to open a search/command palette. Search tasks by name, or use quick actions (new task, toggle theme, settings, trash).'),
+      ...img('25_command_palette', 'Command Palette \u2014 Ctrl+K search and quick actions'),
+      emptyLine(),
+      para('Press ? to see all keyboard shortcuts:'),
+      ...img('26_keyboard_shortcuts', 'Keyboard Shortcuts help modal'),
+      new Paragraph({ children: [new PageBreak()] }),
+
+      heading2('B1.13 Admin Panel'),
+      para('Only visible to admins. Three tabs: Members, Sub-Teams, Settings.'),
+      emptyLine(),
+      heading3('Members Tab'),
+      para('Lists all team members. Admins can change roles, set custom permissions (12 toggles), or remove members.'),
+      ...img('27_admin_members', 'Admin \u2014 Members tab'),
+      ...img('28_admin_permissions_expanded', 'Admin \u2014 Permission toggles expanded for a member'),
+      emptyLine(),
+      heading3('Sub-Teams Tab'),
+      para('Create smaller groups within the team (e.g., "Design Team"). Add/remove members via dropdown.'),
+      ...img('29_admin_subteams', 'Admin \u2014 Sub-Teams tab'),
+      emptyLine(),
+      heading3('Settings Tab'),
+      para('Change team name and description.'),
+      ...img('30_admin_settings', 'Admin \u2014 Settings tab'),
+      new Paragraph({ children: [new PageBreak()] }),
+
+      heading2('B1.14 Profile & Settings'),
+      para('Users can edit their name, change the theme (Light/Dark/System), and configure notification preferences with quiet hours.'),
+      ...img('31_profile_page', 'Profile Page \u2014 name, theme, and settings'),
+      ...img('32_profile_notifications', 'Notification Preferences \u2014 toggle types and quiet hours'),
+      emptyLine(),
+
+      heading2('B1.15 Trash'),
+      para('Deleted tasks go here first. Users can restore them or permanently delete. Tasks auto-purge after 30 days.'),
+      ...img('33_trash_page', 'Trash Page \u2014 soft-deleted tasks with restore/delete'),
+      new Paragraph({ children: [new PageBreak()] }),
+
+      // ══════════ B2: DARK MODE ══════════
+      heading1('B2. Dark Mode \u2014 All Screens'),
+      para('Every screen supports dark mode. Users toggle via the sun/moon icon in the header or from Profile settings. Three options: Light, Dark, System (follows OS).'),
+      emptyLine(),
+      ...img('35_dark_dashboard_list', 'Dark Mode \u2014 Dashboard List View'),
+      ...img('36_dark_board_view', 'Dark Mode \u2014 Kanban Board'),
+      ...img('37_dark_task_detail', 'Dark Mode \u2014 Task Detail Panel'),
+      ...img('38_dark_chat_panel', 'Dark Mode \u2014 Chat Panel'),
+      ...img('39_dark_admin_panel', 'Dark Mode \u2014 Admin Panel'),
+      ...img('40_dark_profile', 'Dark Mode \u2014 Profile Page'),
+      new Paragraph({ children: [new PageBreak()] }),
+
+      // ══════════ B3: MOBILE ══════════
+      heading1('B3. Mobile Responsive'),
+      para('The app adapts to mobile screens (<1024px). The sidebar becomes an overlay toggled by a hamburger icon. A fixed bottom navigation bar provides quick access to Tasks, Team, Search, Chat, and Alerts.'),
+      emptyLine(),
+      ...img('41_mobile_login', 'Mobile \u2014 Login Page', 300, 650),
+      ...img('42_mobile_dashboard', 'Mobile \u2014 Dashboard with Bottom Navigation', 300, 650),
+      ...img('45_mobile_bottom_nav', 'Mobile \u2014 Bottom Navigation Bar', 300, 650),
+      new Paragraph({ children: [new PageBreak()] }),
+
+      // ══════════ B4: ROLE COMPARISON ══════════
+      heading1('B4. Role-Based Access (What Users See)'),
+      para('The app enforces permissions in the UI. Different roles see different things. Here\u2019s a comparison:'),
+      emptyLine(),
+      heading2('B4.1 Admin View'),
+      para('Admins see everything: all tasks, admin panel link in sidebar, delete/edit buttons on all tasks, full bulk actions toolbar.'),
+      ...img('06_dashboard_list_view', 'Admin Dashboard \u2014 full sidebar with Admin Panel link'),
+      emptyLine(),
+      heading2('B4.2 Member View'),
+      para('Members don\u2019t see the Admin Panel link. They can create and edit their own tasks. They cannot delete tasks or manage team settings.'),
+      ...img('46_member_dashboard', 'Member (Alice) Dashboard \u2014 no Admin Panel link in sidebar'),
+      ...img('47_member_task_detail', 'Member Task Detail \u2014 edit/delete buttons may be restricted'),
+      new Paragraph({ children: [new PageBreak()] }),
+
+      // ══════════ B5: REVIEW CHECKLIST ══════════
+      heading1('B5. Review Checklist'),
+      para('Use this checklist to systematically test the app. Open the app in your browser, try each workflow, and note any issues as comments on this document.'),
+      emptyLine(),
+      para('App URL: https://task-manager-eight-vert-91.vercel.app'),
+      para('Login: uat.tester@test.com / UatTest123!'),
+      emptyLine(),
+
+      heading2('B5.1 Account & Authentication'),
+      simpleTable(['#', 'Test', 'Result'], [
+        ['1', 'Open the app \u2014 does the login page load cleanly?', ''],
+        ['2', 'Try logging in with wrong password \u2014 does it show a clear error?', ''],
+        ['3', 'Log in with the test account \u2014 does it redirect to the dashboard?', ''],
+        ['4', 'Click Sign Out \u2014 does it log you out and show the login page?', ''],
+      ], [600, 7000, CW - 7600]),
+      emptyLine(),
+
+      heading2('B5.2 Navigation & Layout'),
+      simpleTable(['#', 'Test', 'Result'], [
+        ['5', 'Is the sidebar easy to understand? Can you find projects, team dashboard, admin?', ''],
+        ['6', 'Click through all sidebar links \u2014 do they all work?', ''],
+        ['7', 'Switch between List, Board, Calendar, Gantt views \u2014 are they all useful?', ''],
+        ['8', 'Press Ctrl+K \u2014 does the search palette open? Can you find tasks?', ''],
+        ['9', 'Press ? \u2014 do the keyboard shortcuts make sense?', ''],
+      ], [600, 7000, CW - 7600]),
+      emptyLine(),
+
+      heading2('B5.3 Task Management'),
+      simpleTable(['#', 'Test', 'Result'], [
+        ['10', 'Create a task using Quick Add \u2014 is it intuitive?', ''],
+        ['11', 'Click a task to open the detail panel \u2014 can you edit all fields?', ''],
+        ['12', 'Change status by clicking the circle checkbox in the list \u2014 does it work?', ''],
+        ['13', 'Drag a card in Board view to change its status \u2014 is it smooth?', ''],
+        ['14', 'Add a sub-task \u2014 does it appear nested under the parent?', ''],
+        ['15', 'Add a dependency \u2014 does the Gantt view show the arrow?', ''],
+        ['16', 'Add a comment on a task \u2014 does it appear instantly?', ''],
+        ['17', 'Delete a task \u2014 does it go to Trash? Can you restore it?', ''],
+        ['18', 'Select multiple tasks and use bulk actions \u2014 does it work?', ''],
+      ], [600, 7000, CW - 7600]),
+      emptyLine(),
+
+      heading2('B5.4 Team & Chat'),
+      simpleTable(['#', 'Test', 'Result'], [
+        ['19', 'Open Team Dashboard \u2014 does it show useful stats?', ''],
+        ['20', 'Open Chat \u2014 can you see conversations and send a message?', ''],
+        ['21', 'Click the bell icon \u2014 do notifications appear? Are they relevant?', ''],
+        ['22', 'Open Admin Panel \u2014 can you see members, change roles, manage sub-teams?', ''],
+      ], [600, 7000, CW - 7600]),
+      emptyLine(),
+
+      heading2('B5.5 Settings & Personalization'),
+      simpleTable(['#', 'Test', 'Result'], [
+        ['23', 'Go to Profile \u2014 can you change your name and save?', ''],
+        ['24', 'Switch to Dark Mode \u2014 does the entire app look good?', ''],
+        ['25', 'Switch back to Light Mode \u2014 does it revert cleanly?', ''],
+        ['26', 'Set notification preferences \u2014 are the options clear?', ''],
+      ], [600, 7000, CW - 7600]),
+      emptyLine(),
+
+      heading2('B5.6 Mobile Experience'),
+      simpleTable(['#', 'Test', 'Result'], [
+        ['27', 'Open the app on your phone \u2014 does it load properly?', ''],
+        ['28', 'Is the bottom navigation bar easy to use?', ''],
+        ['29', 'Can you open the sidebar with the hamburger menu?', ''],
+        ['30', 'Can you create and edit tasks on mobile?', ''],
+        ['31', 'Does Board view scroll horizontally on mobile?', ''],
+      ], [600, 7000, CW - 7600]),
+      emptyLine(),
+
+      heading2('B5.7 Overall Impression'),
+      simpleTable(['#', 'Question', 'Notes'], [
+        ['32', 'Is the app easy to learn without instructions?', ''],
+        ['33', 'What\u2019s the most confusing part?', ''],
+        ['34', 'What\u2019s missing that you\u2019d expect in a task manager?', ''],
+        ['35', 'Would you use this over your current tool? Why/why not?', ''],
+        ['36', 'Rate the overall design: 1 (ugly) to 5 (beautiful)', ''],
+        ['37', 'Rate the usability: 1 (confusing) to 5 (intuitive)', ''],
+        ['38', 'Any other comments, suggestions, or bugs noticed?', ''],
+      ], [600, 7000, CW - 7600]),
+      emptyLine(),
+
       // ══════════ END ══════════
       new Paragraph({ border: { bottom: { style: BorderStyle.SINGLE, size: 6, color: COLOR_PRIMARY, space: 1 } }, spacing: { before: 400, after: 200 }, children: [] }),
-      new Paragraph({ alignment: AlignmentType.CENTER, spacing: { after: 100 }, children: [new TextRun({ text: 'End of Technical Reference', font: FONT, size: 24, bold: true, color: COLOR_PRIMARY })] }),
-      new Paragraph({ alignment: AlignmentType.CENTER, children: [new TextRun({ text: 'For questions, see CLAUDE.md or contact the project admin.', font: FONT, size: 20, color: COLOR_GRAY })] }),
+      new Paragraph({ alignment: AlignmentType.CENTER, spacing: { after: 100 }, children: [new TextRun({ text: 'End of Document', font: FONT, size: 24, bold: true, color: COLOR_PRIMARY })] }),
+      new Paragraph({ alignment: AlignmentType.CENTER, children: [new TextRun({ text: 'Please add your review comments directly in this document using Track Changes or Comments.', font: FONT, size: 20, color: COLOR_GRAY })] }),
     ],
   }],
 });
 
-const outPath = 'D:\\Coding\\task-manager\\Team-Task-Manager-Technical-Reference.docx';
+const outPath1 = 'D:\\Coding\\task-manager\\Team-Task-Manager-Technical-Reference.docx';
+const outPath2 = 'D:\\Coding\\task-manager\\Team-Task-Manager-Technical-Reference-v2.docx';
 Packer.toBuffer(doc).then(buf => {
-  fs.writeFileSync(outPath, buf);
+  let outPath;
+  try { fs.writeFileSync(outPath1, buf); outPath = outPath1; }
+  catch { fs.writeFileSync(outPath2, buf); outPath = outPath2; console.log('Original file locked, wrote to v2 instead.'); }
   console.log(`Technical Reference saved: ${outPath}`);
   console.log(`File size: ${(buf.length / 1024).toFixed(0)} KB`);
-  console.log('Chapters: 13');
+  console.log('Part A: 15 chapters (Technical Reference)');
+  console.log('Part B: 5 sections (UI/UX Review Guide with 38-item checklist)');
 });
