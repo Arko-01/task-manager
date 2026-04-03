@@ -1,11 +1,12 @@
 import { create } from 'zustand'
 import { supabase } from '../lib/supabase'
-import type { Conversation, Message } from '../types'
+import type { Conversation, Message, MessageRead } from '../types'
 
 interface ChatState {
   conversations: Conversation[]
   currentConversation: Conversation | null
   messages: Message[]
+  messageReads: Record<string, MessageRead[]> // messageId -> reads by other users
   loading: boolean
   fetchConversations: () => Promise<void>
   selectConversation: (convId: string) => Promise<void>
@@ -13,6 +14,7 @@ interface ChatState {
   createGroupConversation: (name: string, memberIds: string[]) => Promise<{ error: string | null }>
   sendMessage: (content: string) => Promise<{ error: string | null }>
   markRead: (messageId: string) => Promise<void>
+  markAllRead: (conversationId: string) => Promise<void>
   subscribeToMessages: () => () => void
 }
 
@@ -20,6 +22,7 @@ export const useChatStore = create<ChatState>((set, get) => ({
   conversations: [],
   currentConversation: null,
   messages: [],
+  messageReads: {},
   loading: false,
 
   fetchConversations: async () => {
@@ -78,7 +81,7 @@ export const useChatStore = create<ChatState>((set, get) => ({
 
   selectConversation: async (convId) => {
     const conv = get().conversations.find((c) => c.id === convId)
-    set({ currentConversation: conv || null, loading: true })
+    set({ currentConversation: conv || null, loading: true, messageReads: {} })
 
     const { data } = await supabase
       .from('messages')
@@ -86,7 +89,32 @@ export const useChatStore = create<ChatState>((set, get) => ({
       .eq('conversation_id', convId)
       .order('created_at')
 
-    set({ messages: (data as Message[]) || [], loading: false })
+    const msgs = (data as Message[]) || []
+    set({ messages: msgs, loading: false })
+
+    // Auto-mark all unread messages as read
+    await get().markAllRead(convId)
+
+    // Fetch read receipts for messages sent by current user
+    const { data: { user } } = await supabase.auth.getUser()
+    if (user) {
+      const myMsgIds = msgs.filter((m) => m.sender_id === user.id).map((m) => m.id)
+      if (myMsgIds.length) {
+        const { data: reads } = await supabase
+          .from('message_reads')
+          .select('message_id, user_id, read_at')
+          .in('message_id', myMsgIds)
+
+        if (reads) {
+          const readsMap: Record<string, MessageRead[]> = {}
+          for (const read of reads) {
+            if (!readsMap[read.message_id]) readsMap[read.message_id] = []
+            readsMap[read.message_id].push(read)
+          }
+          set({ messageReads: readsMap })
+        }
+      }
+    }
   },
 
   createDirectConversation: async (otherUserId) => {
@@ -174,11 +202,53 @@ export const useChatStore = create<ChatState>((set, get) => ({
     })
   },
 
+  markAllRead: async (conversationId) => {
+    const { data: { user } } = await supabase.auth.getUser()
+    if (!user) return
+
+    // Get all messages in this conversation not sent by current user
+    const { data: unreadMsgs } = await supabase
+      .from('messages')
+      .select('id')
+      .eq('conversation_id', conversationId)
+      .neq('sender_id', user.id)
+
+    if (!unreadMsgs?.length) return
+
+    // Check which ones are already read
+    const { data: existingReads } = await supabase
+      .from('message_reads')
+      .select('message_id')
+      .eq('user_id', user.id)
+      .in('message_id', unreadMsgs.map((m) => m.id))
+
+    const readSet = new Set((existingReads || []).map((r) => r.message_id))
+    const toMark = unreadMsgs.filter((m) => !readSet.has(m.id))
+
+    if (!toMark.length) return
+
+    await supabase.from('message_reads').insert(
+      toMark.map((m) => ({
+        message_id: m.id,
+        user_id: user.id,
+        read_at: new Date().toISOString(),
+      }))
+    )
+
+    // Update unread count in conversation list
+    set((s) => ({
+      conversations: s.conversations.map((c) =>
+        c.id === conversationId ? { ...c, unread_count: 0 } : c
+      ),
+    }))
+  },
+
   subscribeToMessages: () => {
     const conv = get().currentConversation
     if (!conv) return () => {}
 
-    const channel = supabase
+    // Subscribe to new messages
+    const msgChannel = supabase
       .channel(`messages:${conv.id}`)
       .on(
         'postgres_changes',
@@ -194,11 +264,41 @@ export const useChatStore = create<ChatState>((set, get) => ({
               if (s.messages.some((m) => m.id === data.id)) return s
               return { messages: [...s.messages, data as Message] }
             })
+            // Auto-mark incoming messages as read (we're viewing this conversation)
+            const { data: { user } } = await supabase.auth.getUser()
+            if (user && data.sender_id !== user.id) {
+              await get().markRead(data.id)
+            }
           }
         }
       )
       .subscribe()
 
-    return () => { supabase.removeChannel(channel) }
+    // Subscribe to read receipts for live tick updates
+    const readChannel = supabase
+      .channel(`reads:${conv.id}`)
+      .on(
+        'postgres_changes',
+        { event: 'INSERT', schema: 'public', table: 'message_reads' },
+        (payload) => {
+          const read = payload.new as MessageRead
+          set((s) => {
+            const existing = s.messageReads[read.message_id] || []
+            if (existing.some((r) => r.user_id === read.user_id)) return s
+            return {
+              messageReads: {
+                ...s.messageReads,
+                [read.message_id]: [...existing, read],
+              },
+            }
+          })
+        }
+      )
+      .subscribe()
+
+    return () => {
+      supabase.removeChannel(msgChannel)
+      supabase.removeChannel(readChannel)
+    }
   },
 }))

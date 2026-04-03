@@ -85,18 +85,23 @@ export const useAuthStore = create<AuthState>((set, get) => ({
   },
 
   signOut: async () => {
+    // Clean up auth listener immediately
+    get()._authSubscription?.unsubscribe()
+    set({ _authSubscription: null, user: null, profile: null, session: null })
+
     try {
-      // Clean up auth listener before signing out
-      get()._authSubscription?.unsubscribe()
-      set({ _authSubscription: null })
-      await supabase.auth.signOut()
+      // Race signOut against a timeout — don't let a slow network block logout
+      await Promise.race([
+        supabase.auth.signOut(),
+        new Promise((_, reject) => setTimeout(() => reject(new Error('timeout')), 3000)),
+      ])
     } catch {
-      // Even if signOut API fails, clear local state
-    } finally {
-      set({ user: null, profile: null, session: null })
-      // Force redirect to login — handles edge cases where auth listener doesn't fire
-      window.location.href = '/login'
+      // Even if signOut API fails or times out, clear local storage manually
+      localStorage.removeItem('sb-iojyzntejrxjtnuyfgrs-auth-token')
     }
+
+    // Force full page reload to login — clears all in-memory state
+    window.location.replace('/login')
   },
 
   updateProfile: async (data) => {

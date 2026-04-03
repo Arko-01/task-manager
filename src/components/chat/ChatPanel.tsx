@@ -1,5 +1,5 @@
 import { useState, useEffect, useRef } from 'react'
-import { X, Send, Plus, ArrowLeft, MessageCircle } from 'lucide-react'
+import { X, Send, Plus, ArrowLeft, MessageCircle, Check, CheckCheck, Users } from 'lucide-react'
 import { useChatStore } from '../../store/chatStore'
 import { useTeamStore } from '../../store/teamStore'
 import { useAuthStore } from '../../store/authStore'
@@ -8,16 +8,70 @@ import { Modal } from '../ui/Modal'
 import { Input } from '../ui/Input'
 import { Button } from '../ui/Button'
 import { useToast } from '../ui/Toast'
-import type { Conversation } from '../../types'
+import type { Conversation, Message } from '../../types'
 
 interface Props {
   open: boolean
   onClose: () => void
 }
 
+// ── Date helpers ──
+
+function isSameDay(d1: Date, d2: Date) {
+  return d1.getFullYear() === d2.getFullYear() && d1.getMonth() === d2.getMonth() && d1.getDate() === d2.getDate()
+}
+
+function formatDateSeparator(date: Date): string {
+  const today = new Date()
+  const yesterday = new Date()
+  yesterday.setDate(yesterday.getDate() - 1)
+
+  if (isSameDay(date, today)) return 'Today'
+  if (isSameDay(date, yesterday)) return 'Yesterday'
+
+  return date.toLocaleDateString('en-US', { weekday: 'long', month: 'short', day: 'numeric', year: date.getFullYear() !== today.getFullYear() ? 'numeric' : undefined })
+}
+
+function formatMessageTime(d: string): string {
+  return new Date(d).toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit' })
+}
+
+function formatConversationTime(d: string): string {
+  const date = new Date(d)
+  const today = new Date()
+  const yesterday = new Date()
+  yesterday.setDate(yesterday.getDate() - 1)
+
+  if (isSameDay(date, today)) return formatMessageTime(d)
+  if (isSameDay(date, yesterday)) return 'Yesterday'
+  return date.toLocaleDateString('en-US', { month: 'short', day: 'numeric' })
+}
+
+// ── Tick component ──
+
+function MessageTicks({ messageId, isMe, conversationMembers }: { messageId: string; isMe: boolean; conversationMembers: number }) {
+  const reads = useChatStore((s) => s.messageReads[messageId])
+
+  if (!isMe) return null
+
+  // Count how many OTHER members have read (exclude self)
+  const readCount = reads?.length || 0
+  // Message is "read" if at least one other member read it (for DM) or all others (for group)
+  const othersCount = Math.max(conversationMembers - 1, 1)
+  const allRead = readCount >= othersCount
+
+  if (allRead && readCount > 0) {
+    // Blue double ticks — read by all
+    return <CheckCheck size={14} className="text-blue-400 shrink-0" />
+  }
+
+  // Single tick — sent (delivered)
+  return <Check size={14} className="text-white/60 shrink-0" />
+}
+
 export function ChatPanel({ open, onClose }: Props) {
   const { conversations, currentConversation, messages, fetchConversations, selectConversation, sendMessage, createDirectConversation, createGroupConversation } = useChatStore()
-  const { members } = useTeamStore()
+  const { members, currentTeam, fetchMembers } = useTeamStore()
   const { profile } = useAuthStore()
   const { showToast } = useToast()
   const [content, setContent] = useState('')
@@ -25,11 +79,15 @@ export function ChatPanel({ open, onClose }: Props) {
   const [groupName, setGroupName] = useState('')
   const [selectedMembers, setSelectedMembers] = useState<string[]>([])
   const [chatType, setChatType] = useState<'direct' | 'group'>('direct')
+  const [showGroupInfo, setShowGroupInfo] = useState(false)
   const messagesEndRef = useRef<HTMLDivElement>(null)
 
   useEffect(() => {
-    if (open) fetchConversations()
-  }, [open, fetchConversations])
+    if (open) {
+      fetchConversations()
+      if (currentTeam) fetchMembers(currentTeam.id)
+    }
+  }, [open, fetchConversations, currentTeam, fetchMembers])
 
   useEffect(() => {
     if (currentConversation) {
@@ -70,10 +128,20 @@ export function ChatPanel({ open, onClose }: Props) {
     return other?.profile?.full_name || 'Chat'
   }
 
-  const formatTime = (d: string) => {
-    const date = new Date(d)
-    return date.toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit' })
-  }
+  // Group messages by date for separators
+  const groupedMessages = messages.reduce<{ date: string; messages: Message[] }[]>((groups, msg) => {
+    const msgDate = new Date(msg.created_at)
+    const dateKey = `${msgDate.getFullYear()}-${msgDate.getMonth()}-${msgDate.getDate()}`
+    const lastGroup = groups[groups.length - 1]
+    if (lastGroup && lastGroup.date === dateKey) {
+      lastGroup.messages.push(msg)
+    } else {
+      groups.push({ date: dateKey, messages: [msg] })
+    }
+    return groups
+  }, [])
+
+  const memberCount = currentConversation?.members?.length || 2
 
   if (!open) return null
 
@@ -83,12 +151,21 @@ export function ChatPanel({ open, onClose }: Props) {
       <div className="flex items-center justify-between border-b border-gray-200 px-4 py-3 dark:border-gray-800">
         {currentConversation ? (
           <>
-            <button onClick={() => useChatStore.setState({ currentConversation: null })} className="text-gray-400 hover:text-gray-600 dark:hover:text-gray-300">
+            <button onClick={() => { useChatStore.setState({ currentConversation: null }); setShowGroupInfo(false) }} className="text-gray-400 hover:text-gray-600 dark:hover:text-gray-300">
               <ArrowLeft size={18} />
             </button>
             <span className="flex-1 text-center text-sm font-medium text-gray-900 dark:text-gray-100 truncate mx-2">
               {getConversationName(currentConversation)}
             </span>
+            {(currentConversation.type === 'group' || currentConversation.type === 'team') && (
+              <button
+                onClick={() => setShowGroupInfo(!showGroupInfo)}
+                className={`rounded p-1 ${showGroupInfo ? 'bg-primary-50 text-primary-600 dark:bg-primary-900/30 dark:text-primary-400' : 'text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-800'}`}
+                title="Group members"
+              >
+                <Users size={16} />
+              </button>
+            )}
           </>
         ) : (
           <>
@@ -105,6 +182,28 @@ export function ChatPanel({ open, onClose }: Props) {
           <X size={16} />
         </button>
       </div>
+
+      {/* Group Members Panel */}
+      {currentConversation && showGroupInfo && (currentConversation.type === 'group' || currentConversation.type === 'team') && (
+        <div className="border-b border-gray-200 bg-gray-50 px-4 py-3 dark:border-gray-800 dark:bg-gray-800/50">
+          <p className="text-xs font-medium text-gray-500 dark:text-gray-400 mb-2">
+            {currentConversation.members?.length || 0} members
+          </p>
+          <div className="space-y-1.5 max-h-32 overflow-y-auto">
+            {currentConversation.members?.map((m) => (
+              <div key={m.user_id} className="flex items-center gap-2">
+                <Avatar name={m.profile?.full_name} size="xs" />
+                <span className="text-xs text-gray-700 dark:text-gray-300 truncate">
+                  {m.profile?.full_name || 'Unknown'}
+                  {m.user_id === profile?.id && (
+                    <span className="text-gray-400 dark:text-gray-500 ml-1">(You)</span>
+                  )}
+                </span>
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
 
       {/* Content */}
       {!currentConversation ? (
@@ -126,13 +225,18 @@ export function ChatPanel({ open, onClose }: Props) {
                     {getConversationName(conv)}
                   </span>
                   {conv.last_message && (
-                    <span className="text-xs text-gray-400 shrink-0">{formatTime(conv.last_message.created_at)}</span>
+                    <span className="text-xs text-gray-400 shrink-0 ml-2">{formatConversationTime(conv.last_message.created_at)}</span>
                   )}
                 </div>
                 {conv.last_message && (
-                  <p className="truncate text-xs text-gray-500 dark:text-gray-400">
-                    {conv.last_message.content}
-                  </p>
+                  <div className="flex items-center gap-1">
+                    {conv.last_message.sender_id === profile?.id && (
+                      <CheckCheck size={12} className="text-gray-400 shrink-0" />
+                    )}
+                    <p className="truncate text-xs text-gray-500 dark:text-gray-400">
+                      {conv.last_message.content}
+                    </p>
+                  </div>
                 )}
               </div>
               {(conv.unread_count || 0) > 0 && (
@@ -149,21 +253,40 @@ export function ChatPanel({ open, onClose }: Props) {
       ) : (
         /* Messages */
         <>
-          <div className="flex-1 overflow-y-auto px-4 py-3 space-y-3">
-            {messages.map((msg) => {
-              const isMe = msg.sender_id === profile?.id
+          <div className="flex-1 overflow-y-auto px-4 py-3 space-y-1">
+            {groupedMessages.map((group) => {
+              const firstMsg = group.messages[0]
+              const groupDate = new Date(firstMsg.created_at)
               return (
-                <div key={msg.id} className={`flex ${isMe ? 'justify-end' : 'justify-start'}`}>
-                  <div className={`max-w-[80%] rounded-lg px-3 py-2 ${isMe ? 'bg-primary-500 text-white' : 'bg-gray-100 text-gray-900 dark:bg-gray-800 dark:text-gray-100'}`}>
-                    {!isMe && (
-                      <p className="text-xs font-medium mb-0.5 opacity-70">
-                        {msg.sender?.full_name}
-                      </p>
-                    )}
-                    <p className="text-sm whitespace-pre-wrap">{msg.content}</p>
-                    <p className={`text-[10px] mt-0.5 ${isMe ? 'text-white/70' : 'text-gray-400'}`}>
-                      {formatTime(msg.created_at)}
-                    </p>
+                <div key={group.date}>
+                  {/* Date separator */}
+                  <div className="flex items-center justify-center my-3">
+                    <span className="rounded-full bg-gray-100 px-3 py-1 text-[11px] font-medium text-gray-500 dark:bg-gray-800 dark:text-gray-400">
+                      {formatDateSeparator(groupDate)}
+                    </span>
+                  </div>
+
+                  {/* Messages for this date */}
+                  <div className="space-y-1.5">
+                    {group.messages.map((msg) => {
+                      const isMe = msg.sender_id === profile?.id
+                      return (
+                        <div key={msg.id} className={`flex ${isMe ? 'justify-end' : 'justify-start'}`}>
+                          <div className={`max-w-[80%] rounded-lg px-3 py-1.5 ${isMe ? 'bg-primary-500 text-white' : 'bg-gray-100 text-gray-900 dark:bg-gray-800 dark:text-gray-100'}`}>
+                            {!isMe && (currentConversation.type === 'group' || currentConversation.type === 'team') && (
+                              <p className="text-xs font-medium mb-0.5 opacity-70">
+                                {msg.sender?.full_name}
+                              </p>
+                            )}
+                            <p className="text-sm whitespace-pre-wrap">{msg.content}</p>
+                            <div className={`flex items-center justify-end gap-1 mt-0.5 ${isMe ? 'text-white/60' : 'text-gray-400'}`}>
+                              <span className="text-[10px]">{formatMessageTime(msg.created_at)}</span>
+                              <MessageTicks messageId={msg.id} isMe={isMe} conversationMembers={memberCount} />
+                            </div>
+                          </div>
+                        </div>
+                      )
+                    })}
                   </div>
                 </div>
               )
