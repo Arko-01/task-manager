@@ -25,3 +25,10 @@ dist-ssr
 *.sw?
 
 .vercel
+
+# Generated docs & scripts
+*.docx
+generate-*.mjs
+lighthouse-*.json
+manual-screenshots/
+~$*.docx

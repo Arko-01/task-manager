@@ -71,3 +71,14 @@ See: C:\Users\Asus\.claude\plans\snug-stargazing-kitten.md
 - Member removal cleanup: unassigns removed member from all team tasks (teamStore.ts)
 - Calendar click-to-create: clicking a date shows inline task creation form (TaskCalendar.tsx + ProjectPage.tsx)
 - Trash purge cron: migration 007 for pg_cron 30-day auto-delete (supabase/migrations/007)
+
+## UAT Testing & Final Fixes (April 2026) — COMPLETE
+- BUG-001: Sign-out reliability — try/catch/finally + unsubscribe auth listener + force redirect (authStore.ts)
+- BUG-002: Login error feedback — inline error banner on invalid credentials (LoginForm.tsx)
+- BUG-003: Custom form validation — noValidate + React state-based validation with per-field errors (LoginForm.tsx, SignupForm.tsx)
+- BUG-004: RBAC UI enforcement — usePermissions hook gates edit/delete/create across TaskDetail, BulkActions, QuickAddTask, AssigneeSelector
+- Accessibility (axe-core audit): ARIA labels on TaskRow (checkbox, expand, status toggle), TaskFilters (all selects/inputs), TaskDetail, QuickAddTask, DependencySelector, AssigneeSelector, ProfilePage
+- Color contrast: section header labels upgraded gray-400 → gray-500 across 7 components for WCAG AA
+- Login page landmark: outer div changed to `<main>` element
+- UAT Report: 95 tests executed, 100% pass rate (Team-Task-Manager-UAT-Report-v2.docx)
+- Key new file: `src/hooks/usePermissions.ts` — reusable RBAC hook (permissions, can(), canEditTask())

@@ -14,7 +14,7 @@ A simple, intuitive team task management tool built with a Notion-like minimalis
 - **Task Templates** — Save and reuse common task patterns
 - **Dark Mode** — Full support across all components
 - **Mobile Responsive** — Bottom navigation bar for mobile devices
-- **Accessibility** — WCAG AA contrast, ARIA labels, keyboard navigation
+- **Accessibility** — WCAG AA contrast, ARIA labels, keyboard navigation, axe-core audited
 - **Trash & Restore** — 30-day soft delete with recovery
 
 ## Tech Stack
@@ -50,3 +50,12 @@ Run the SQL migrations in order in your Supabase SQL Editor:
 4. `supabase/migrations/004_*.sql` — Sub-teams & permissions
 5. `supabase/migrations/005_restrict_profiles_rls.sql` — Profile visibility restrictions
 6. `supabase/migrations/006_notification_triggers.sql` — Auto-notification triggers
+7. `supabase/migrations/007_trash_purge_cron.sql` — Auto-purge trashed tasks after 30 days (requires pg_cron extension — enable in Dashboard > Database > Extensions first)
+
+## RBAC & Permissions
+
+4 roles with 12 granular permissions: Admin, Sub-Team Manager, Member, Viewer. Enforced at both database (RLS) and UI level via `usePermissions` hook. Viewers see read-only task details; only users with `create_tasks` permission see the quick-add input.
+
+## Accessibility
+
+Fully audited with axe-core. All interactive elements have ARIA labels, filter controls have accessible names, section headers meet WCAG AA contrast ratios, and pages use proper landmark structure.
