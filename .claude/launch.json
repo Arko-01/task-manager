@@ -3,8 +3,8 @@
   "configurations": [
     {
       "name": "dev",
-      "runtimeExecutable": "npm",
-      "runtimeArgs": ["run", "dev"],
+      "runtimeExecutable": "E:\\GitHub\\Task Manager\\dev-server.bat",
+      "runtimeArgs": [],
       "port": 5173
     }
   ]

@@ -26,6 +26,10 @@ dist-ssr
 
 .vercel
 
+# Local machine config (not shared)
+.claude/settings.local.json
+dev-server.bat
+
 # Generated docs & scripts
 *.docx
 generate-*.mjs
