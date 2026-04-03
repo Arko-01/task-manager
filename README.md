@@ -7,7 +7,7 @@ A simple, intuitive team task management tool built with a Notion-like minimalis
 - **4 Views** — List, Kanban board, Calendar, and Gantt chart
 - **Teams & Sub-teams** — Granular 11-permission role system
 - **Task Management** — 2-level sub-tasks, multiple assignees (primary/secondary), dependencies, recurring tasks
-- **Real-time Chat** — 1-on-1, team, and custom group conversations
+- **Real-time Chat** — 1-on-1, team, and group conversations with WhatsApp-style read receipts (✓✓), date separators, and message notifications
 - **Command Palette** — Quick actions and search with `Ctrl+K`
 - **Auto-notifications** — Triggered on assignment, comments, and status changes
 - **Bulk Actions** — Status, priority, assignee, and date operations
@@ -51,6 +51,7 @@ Run the SQL migrations in order in your Supabase SQL Editor:
 5. `supabase/migrations/005_restrict_profiles_rls.sql` — Profile visibility restrictions
 6. `supabase/migrations/006_notification_triggers.sql` — Auto-notification triggers
 7. `supabase/migrations/007_trash_purge_cron.sql` — Auto-purge trashed tasks after 30 days (requires pg_cron extension — enable in Dashboard > Database > Extensions first)
+8. `supabase/migrations/008_chat_message_notifications.sql` — Chat message notification trigger (notifies all conversation members on new message)
 
 ## RBAC & Permissions
 

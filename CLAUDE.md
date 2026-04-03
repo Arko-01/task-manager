@@ -82,3 +82,16 @@ See: C:\Users\Asus\.claude\plans\snug-stargazing-kitten.md
 - Login page landmark: outer div changed to `<main>` element
 - UAT Report: 95 tests executed, 100% pass rate (Team-Task-Manager-UAT-Report-v2.docx)
 - Key new file: `src/hooks/usePermissions.ts` — reusable RBAC hook (permissions, can(), canEditTask())
+
+## Chat UX Overhaul (April 2026) — COMPLETE
+- Logout reliability: clear state immediately, 3s timeout race on signOut, localStorage fallback, hard redirect via window.location.replace (authStore.ts)
+- Create Group fix: fetch team members when chat panel opens so member list is always populated (ChatPanel.tsx)
+- Group members visibility: Users icon in chat header opens member panel with avatars and "(You)" label (ChatPanel.tsx)
+- WhatsApp-style date separators: messages grouped by date with "Today"/"Yesterday"/full date labels (ChatPanel.tsx)
+- Message timestamps: every message shows time, conversation list shows smart date format (ChatPanel.tsx)
+- Read receipts: single ✓ (sent), blue ✓✓ (read by all recipients) on sent messages (ChatPanel.tsx, chatStore.ts)
+- Auto-mark-read: opening a conversation marks all unread messages as read + clears unread badge (chatStore.ts)
+- Live read receipt updates: Supabase Realtime subscription on message_reads table for instant tick changes (chatStore.ts)
+- Chat message notifications: migration 008 — DB trigger creates notification for all conversation members on new message (008_chat_message_notifications.sql)
+- Avatar xs size: added 20px "xs" variant for compact member lists (Avatar.tsx)
+- SQL migration 008 applied to production Supabase
