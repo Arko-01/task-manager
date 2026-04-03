@@ -26,9 +26,7 @@ dist-ssr
 
 .vercel
 
-# Generated docs & scripts
-*.docx
-generate-*.mjs
+# Temp/build artifacts
 lighthouse-*.json
 manual-screenshots/
 ~$*.docx
