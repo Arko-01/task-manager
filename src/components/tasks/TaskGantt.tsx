@@ -1,22 +1,162 @@
-import { useMemo, useRef, useState, useEffect } from 'react'
+import { useMemo, useRef, useState, useEffect, useCallback } from 'react'
 import { PRIORITY_CONFIG } from '../../types'
 import type { Task } from '../../types'
 
 interface Props {
   tasks: Task[]
   onSelectTask: (task: Task) => void
+  onUpdateTask?: (taskId: string, data: { start_date: string; end_date: string }) => void
 }
 
-export function TaskGantt({ tasks, onSelectTask }: Props) {
+interface DragState {
+  taskId: string
+  mode: 'move' | 'resize-start' | 'resize-end'
+  startX: number
+  originalStart: string
+  originalEnd: string
+}
+
+function addDays(dateStr: string, days: number): string {
+  const d = new Date(dateStr)
+  d.setDate(d.getDate() + days)
+  return d.toISOString().slice(0, 10)
+}
+
+function formatDate(dateStr: string): string {
+  return new Date(dateStr).toISOString().slice(0, 10)
+}
+
+export function TaskGantt({ tasks, onSelectTask, onUpdateTask }: Props) {
   const rootTasks = useMemo(() => tasks.filter((t) => !t.parent_id), [tasks])
   const containerRef = useRef<HTMLDivElement>(null)
   const [isMobile, setIsMobile] = useState(window.innerWidth < 640)
+  const [dragState, setDragState] = useState<DragState | null>(null)
+  const [dragOffset, setDragOffset] = useState(0)
+  const dragDidMove = useRef(false)
 
   useEffect(() => {
     const handleResize = () => setIsMobile(window.innerWidth < 640)
     window.addEventListener('resize', handleResize)
     return () => window.removeEventListener('resize', handleResize)
   }, [])
+
+  // --- Drag handlers ---
+  const getTimelineWidth = useCallback(() => {
+    const el = containerRef.current?.querySelector('.gantt-timeline') as HTMLElement | null
+    return el?.clientWidth || 600
+  }, [])
+
+  const handleDragStart = useCallback(
+    (e: React.MouseEvent | React.TouchEvent, taskId: string, mode: DragState['mode']) => {
+      if (!onUpdateTask) return
+      const task = rootTasks.find((t) => t.id === taskId)
+      if (!task) return
+      e.stopPropagation()
+      e.preventDefault()
+      const clientX = 'touches' in e ? e.touches[0].clientX : e.clientX
+      dragDidMove.current = false
+      setDragState({
+        taskId,
+        mode,
+        startX: clientX,
+        originalStart: formatDate(task.start_date),
+        originalEnd: formatDate(task.end_date),
+      })
+      setDragOffset(0)
+    },
+    [onUpdateTask, rootTasks]
+  )
+
+  useEffect(() => {
+    if (!dragState) return
+
+    const handleMove = (e: MouseEvent | TouchEvent) => {
+      const clientX = 'touches' in e ? e.touches[0].clientX : e.clientX
+      const dx = clientX - dragState.startX
+      if (Math.abs(dx) > 3) dragDidMove.current = true
+      setDragOffset(dx)
+    }
+
+    const handleEnd = () => {
+      if (dragDidMove.current && onUpdateTask) {
+        const containerWidth = getTimelineWidth()
+        const dayOffset = Math.round((dragOffset / containerWidth) * totalDays)
+
+        if (dayOffset !== 0) {
+          let newStart: string
+          let newEnd: string
+
+          if (dragState.mode === 'move') {
+            newStart = addDays(dragState.originalStart, dayOffset)
+            newEnd = addDays(dragState.originalEnd, dayOffset)
+          } else if (dragState.mode === 'resize-start') {
+            newStart = addDays(dragState.originalStart, dayOffset)
+            newEnd = dragState.originalEnd
+            // Enforce min 1 day
+            if (new Date(newStart) >= new Date(newEnd)) {
+              newStart = addDays(newEnd, -1)
+            }
+          } else {
+            newStart = dragState.originalStart
+            newEnd = addDays(dragState.originalEnd, dayOffset)
+            // Enforce min 1 day
+            if (new Date(newEnd) <= new Date(newStart)) {
+              newEnd = addDays(newStart, 1)
+            }
+          }
+
+          onUpdateTask(dragState.taskId, { start_date: newStart, end_date: newEnd })
+        }
+      }
+      setDragState(null)
+      setDragOffset(0)
+    }
+
+    window.addEventListener('mousemove', handleMove)
+    window.addEventListener('mouseup', handleEnd)
+    window.addEventListener('touchmove', handleMove, { passive: false })
+    window.addEventListener('touchend', handleEnd)
+
+    return () => {
+      window.removeEventListener('mousemove', handleMove)
+      window.removeEventListener('mouseup', handleEnd)
+      window.removeEventListener('touchmove', handleMove)
+      window.removeEventListener('touchend', handleEnd)
+    }
+    // dragOffset is intentionally read from closure at handleEnd time
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [dragState, dragOffset, onUpdateTask, getTimelineWidth])
+
+  // Compute drag preview position for the active bar
+  const getDragPreview = useCallback(
+    (taskId: string) => {
+      if (!dragState || dragState.taskId !== taskId || !dragDidMove.current) return null
+      const containerWidth = getTimelineWidth()
+      const dayOffset = Math.round((dragOffset / containerWidth) * totalDaysRef.current)
+
+      let newStart: string
+      let newEnd: string
+
+      if (dragState.mode === 'move') {
+        newStart = addDays(dragState.originalStart, dayOffset)
+        newEnd = addDays(dragState.originalEnd, dayOffset)
+      } else if (dragState.mode === 'resize-start') {
+        newStart = addDays(dragState.originalStart, dayOffset)
+        newEnd = dragState.originalEnd
+        if (new Date(newStart) >= new Date(newEnd)) newStart = addDays(newEnd, -1)
+      } else {
+        newStart = dragState.originalStart
+        newEnd = addDays(dragState.originalEnd, dayOffset)
+        if (new Date(newEnd) <= new Date(newStart)) newEnd = addDays(newStart, 1)
+      }
+
+      return { start: newStart, end: newEnd }
+    },
+    [dragState, dragOffset, getTimelineWidth]
+  )
+
+  // We need totalDays available for the drag handlers, so store in a ref
+  const totalDaysRef = useRef(14)
 
   // Calculate date range
   const { minDate, maxDate, totalDays } = useMemo(() => {
@@ -36,6 +176,9 @@ export function TaskGantt({ tasks, onSelectTask }: Props) {
     const total = Math.ceil((max.getTime() - min.getTime()) / 86400000)
     return { minDate: min, maxDate: max, totalDays: Math.max(total, 14) }
   }, [rootTasks])
+
+  // Keep ref in sync for drag handlers
+  totalDaysRef.current = totalDays
 
   const getPosition = (dateStr: string) => {
     const date = new Date(dateStr)
@@ -116,7 +259,7 @@ export function TaskGantt({ tasks, onSelectTask }: Props) {
           {isMobile && (
             <div className="pointer-events-none absolute right-0 top-0 bottom-0 z-10 w-6 bg-gradient-to-l from-white dark:from-gray-900" />
           )}
-          <div className="relative min-w-[600px]">
+          <div className={`relative min-w-[600px] gantt-timeline ${dragState ? 'cursor-grabbing select-none' : ''}`}>
             {/* Month headers */}
             <div className="h-8 border-b border-gray-200 bg-gray-50 dark:border-gray-800 dark:bg-gray-800/50 relative">
               {monthLabels.map((m, i) => (
@@ -175,20 +318,69 @@ export function TaskGantt({ tasks, onSelectTask }: Props) {
 
             {/* Bars */}
             {rootTasks.map((task) => {
-              const left = getPosition(task.start_date)
-              const width = getWidth(task.start_date, task.end_date)
+              const isDragging = dragState?.taskId === task.id
+              const preview = isDragging ? getDragPreview(task.id) : null
+              const displayStart = preview ? preview.start : task.start_date
+              const displayEnd = preview ? preview.end : task.end_date
+              const left = getPosition(displayStart)
+              const width = getWidth(displayStart, displayEnd)
 
               return (
                 <div
                   key={task.id}
                   className="relative border-b border-gray-100 dark:border-gray-800 h-10 flex items-center"
                 >
+                  {/* Ghost bar showing original position while dragging */}
+                  {isDragging && preview && (
+                    <div
+                      className={`absolute h-5 rounded ${BAR_COLORS[task.status]} opacity-25`}
+                      style={{
+                        left: `${getPosition(task.start_date)}%`,
+                        width: `${getWidth(task.start_date, task.end_date)}%`,
+                        minWidth: '8px',
+                      }}
+                    />
+                  )}
+                  {/* Main bar */}
                   <div
-                    onClick={() => onSelectTask(task)}
-                    className={`absolute h-5 rounded cursor-pointer ${BAR_COLORS[task.status]} opacity-80 hover:opacity-100 transition-opacity`}
+                    onClick={() => {
+                      if (!dragDidMove.current) onSelectTask(task)
+                    }}
+                    onMouseDown={(e) => handleDragStart(e, task.id, 'move')}
+                    onTouchStart={(e) => handleDragStart(e, task.id, 'move')}
+                    className={`group absolute h-5 rounded ${isDragging ? 'cursor-grabbing' : onUpdateTask ? 'cursor-grab' : 'cursor-pointer'} ${BAR_COLORS[task.status]} ${isDragging && preview ? 'opacity-90' : 'opacity-80'} hover:opacity-100 transition-opacity`}
                     style={{ left: `${left}%`, width: `${width}%`, minWidth: '8px' }}
-                    title={`${task.title}\n${task.start_date} → ${task.end_date}`}
-                  />
+                    title={`${task.title}\n${displayStart} → ${displayEnd}`}
+                  >
+                    {/* Left resize handle */}
+                    {onUpdateTask && (
+                      <div
+                        className="absolute left-0 top-0 bottom-0 w-1 cursor-col-resize opacity-0 group-hover:opacity-100 bg-black/20 rounded-l transition-opacity"
+                        onMouseDown={(e) => {
+                          e.stopPropagation()
+                          handleDragStart(e, task.id, 'resize-start')
+                        }}
+                        onTouchStart={(e) => {
+                          e.stopPropagation()
+                          handleDragStart(e, task.id, 'resize-start')
+                        }}
+                      />
+                    )}
+                    {/* Right resize handle */}
+                    {onUpdateTask && (
+                      <div
+                        className="absolute right-0 top-0 bottom-0 w-1 cursor-col-resize opacity-0 group-hover:opacity-100 bg-black/20 rounded-r transition-opacity"
+                        onMouseDown={(e) => {
+                          e.stopPropagation()
+                          handleDragStart(e, task.id, 'resize-end')
+                        }}
+                        onTouchStart={(e) => {
+                          e.stopPropagation()
+                          handleDragStart(e, task.id, 'resize-end')
+                        }}
+                      />
+                    )}
+                  </div>
                 </div>
               )
             })}

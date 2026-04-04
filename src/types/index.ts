@@ -285,6 +285,18 @@ export interface UserProjectPin {
 // ============ View Types ============
 export type ViewType = 'list' | 'board' | 'calendar' | 'gantt' | 'table' | 'reports'
 
+// ============ Saved Views ============
+export interface SavedView {
+  id: string
+  user_id: string
+  team_id: string
+  name: string
+  view_type: ViewType
+  filters: Record<string, unknown>
+  is_default: boolean
+  created_at: string
+}
+
 // ============ Priority & Status Helpers ============
 export const PRIORITY_CONFIG = {
   1: { label: 'Urgent', color: 'red', dotClass: 'bg-red-500' },

@@ -180,3 +180,10 @@ See: C:\Users\Asus\.claude\plans\snug-stargazing-kitten.md
 - Help page with FAQ, troubleshooting, team setup guide — HelpPage.tsx
 - System status page — StatusPage.tsx
 - Routes: /help, /status
+
+## Post-Enhancement Fixes (April 2026) — COMPLETE
+- Timezone picker: dropdown with all IANA timezones grouped by region, auto-detect on first load (ProfilePage.tsx)
+- Due date reminder notifications: pg_cron daily job at 8AM UTC, creates notifications for due_tomorrow/due_today/overdue tasks (migration 011)
+- Saved/custom views: users can save filter+sort+view combos, quick-apply from bookmark dropdown (SavedViews.tsx, migration 012)
+- Gantt bar dragging: interactive move/resize bars to change task dates, drag edges to adjust duration, touch support (TaskGantt.tsx)
+- SQL migrations 011 + 012 applied to production Supabase

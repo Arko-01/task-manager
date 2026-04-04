@@ -62,6 +62,8 @@ Run the SQL migrations in order in your Supabase SQL Editor:
 8. `supabase/migrations/008_chat_message_notifications.sql` — Chat message notification trigger (notifies all conversation members on new message)
 9. `supabase/migrations/009_tags_and_mentions.sql` — Tags column on tasks (GIN-indexed), team_tags table for suggestions, mentions column on comments
 10. `supabase/migrations/010_enhancements.sql` — Task types, time tracking, milestones, templates, project dependencies, activity/audit logs, FTS, favorites, archive, extended roles, profile extensions, brand customization
+11. `supabase/migrations/011_due_date_reminders.sql` — Daily due date reminder notifications via pg_cron (due tomorrow, due today, overdue)
+12. `supabase/migrations/012_saved_views.sql` — Saved views table for user filter/sort/view presets
 
 ## RBAC & Permissions
 

@@ -107,7 +107,7 @@ export function TeamDashboardPage() {
             <TaskBoard tasks={tasks} onSelectTask={handleSelectTask} onStatusChange={handleStatusChange} />
           )}
           {view === 'calendar' && <TaskCalendar tasks={tasks} onSelectTask={handleSelectTask} />}
-          {view === 'gantt' && <TaskGantt tasks={tasks} onSelectTask={handleSelectTask} />}
+          {view === 'gantt' && <TaskGantt tasks={tasks} onSelectTask={handleSelectTask} onUpdateTask={(id, data) => updateTask(id, data)} />}
         </>
       )}
 

@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useMemo } from 'react'
 import { useAuthStore } from '../store/authStore'
 import { Input } from '../components/ui/Input'
 import { Button } from '../components/ui/Button'
@@ -22,8 +22,24 @@ export function ProfilePage() {
   const [bio, setBio] = useState(profile?.bio || '')
   const [skills, setSkills] = useState<string[]>(profile?.skills || [])
   const [skillInput, setSkillInput] = useState('')
+  const [timezone, setTimezone] = useState(profile?.timezone || Intl.DateTimeFormat().resolvedOptions().timeZone)
   const [loading, setLoading] = useState(false)
   const [notifPrefs, setNotifPrefs] = useState<NotificationPreferences | null>(null)
+
+  const groupedTimezones = useMemo(() => {
+    const allZones = Intl.supportedValuesOf('timeZone')
+    const groups: Record<string, { tz: string; label: string }[]> = {}
+    for (const tz of allZones) {
+      const slashIndex = tz.indexOf('/')
+      const region = slashIndex > -1 ? tz.substring(0, slashIndex) : 'Other'
+      const offset = new Intl.DateTimeFormat('en-US', { timeZone: tz, timeZoneName: 'shortOffset' })
+        .formatToParts(new Date())
+        .find((p) => p.type === 'timeZoneName')?.value || ''
+      if (!groups[region]) groups[region] = []
+      groups[region].push({ tz, label: `${tz.replace(/_/g, ' ')} (${offset})` })
+    }
+    return Object.entries(groups).sort(([a], [b]) => a.localeCompare(b))
+  }, [])
 
   useEffect(() => {
     if (!profile) return
@@ -80,7 +96,7 @@ export function ProfilePage() {
   const handleSave = async () => {
     if (!name.trim()) return
     setLoading(true)
-    const { error } = await updateProfile({ full_name: name.trim(), bio: bio.trim() || null, skills })
+    const { error } = await updateProfile({ full_name: name.trim(), bio: bio.trim() || null, skills, timezone })
     setLoading(false)
     if (error) showToast(error, 'error')
     else showToast('Profile updated', 'success')
@@ -145,12 +161,23 @@ export function ProfilePage() {
         </div>
 
         {/* Timezone */}
-        {profile?.timezone && (
-          <div className="space-y-1">
-            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300">Timezone</label>
-            <p className="text-sm text-gray-600 dark:text-gray-400">{profile.timezone}</p>
-          </div>
-        )}
+        <div className="space-y-1">
+          <label htmlFor="profile-timezone" className="block text-sm font-medium text-gray-700 dark:text-gray-300">Timezone</label>
+          <select
+            id="profile-timezone"
+            value={timezone}
+            onChange={(e) => setTimezone(e.target.value)}
+            className="w-full rounded-lg border border-gray-200 bg-white px-3 py-2 text-sm text-gray-900 focus:border-primary-500 focus:outline-none focus:ring-1 focus:ring-primary-500 dark:border-gray-700 dark:bg-gray-800 dark:text-gray-100"
+          >
+            {groupedTimezones.map(([region, zones]) => (
+              <optgroup key={region} label={region}>
+                {zones.map(({ tz, label }) => (
+                  <option key={tz} value={tz}>{label}</option>
+                ))}
+              </optgroup>
+            ))}
+          </select>
+        </div>
 
         {/* Theme */}
         <div className="space-y-1">

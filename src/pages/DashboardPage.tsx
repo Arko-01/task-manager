@@ -102,7 +102,7 @@ export function DashboardPage() {
             <TaskCalendar tasks={tasks} onSelectTask={handleSelectTask} />
           )}
           {view === 'gantt' && (
-            <TaskGantt tasks={tasks} onSelectTask={handleSelectTask} />
+            <TaskGantt tasks={tasks} onSelectTask={handleSelectTask} onUpdateTask={(id, data) => updateTask(id, data)} />
           )}
           {view === 'table' && (
             <TaskTable tasks={tasks} onSelect={handleSelectTask} onStatusChange={handleStatusChange} />

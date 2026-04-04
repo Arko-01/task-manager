@@ -6,6 +6,7 @@ import { useTeamStore } from '../store/teamStore'
 import { MilestoneList } from '../components/project/MilestoneList'
 import { ProjectDependencies } from '../components/project/ProjectDependencies'
 import { ViewToggle } from '../components/tasks/ViewToggle'
+import { SavedViews } from '../components/tasks/SavedViews'
 import { TaskFilters } from '../components/tasks/TaskFilters'
 import { TaskList } from '../components/tasks/TaskList'
 import { TaskBoard } from '../components/tasks/TaskBoard'
@@ -141,6 +142,7 @@ export function ProjectPage() {
       <div className="mb-4 flex flex-wrap items-center justify-between gap-3">
         <div className="flex items-center gap-2">
           <ViewToggle current={view} onChange={setView} />
+          <SavedViews currentView={view} onViewChange={setView} />
           {projectId && <TaskTemplates projectId={projectId} onCreated={() => fetchTasks(projectId)} />}
           <div className="flex items-center gap-1 ml-2 border-l border-gray-200 dark:border-gray-700 pl-2">
             <ExportCSV tasks={tasks} filename={project.name} />
@@ -204,7 +206,7 @@ export function ProjectPage() {
               )}
             </>
           )}
-          {view === 'gantt' && <TaskGantt tasks={tasks} onSelectTask={handleSelectTask} />}
+          {view === 'gantt' && <TaskGantt tasks={tasks} onSelectTask={handleSelectTask} onUpdateTask={(id, data) => updateTask(id, data)} />}
           {view === 'table' && (
             <TaskTable tasks={tasks.filter((t) => !t.parent_id)} onSelect={handleSelectTask} onStatusChange={handleStatusChange} />
           )}
