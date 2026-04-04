@@ -52,6 +52,7 @@ Run the SQL migrations in order in your Supabase SQL Editor:
 6. `supabase/migrations/006_notification_triggers.sql` — Auto-notification triggers
 7. `supabase/migrations/007_trash_purge_cron.sql` — Auto-purge trashed tasks after 30 days (requires pg_cron extension — enable in Dashboard > Database > Extensions first)
 8. `supabase/migrations/008_chat_message_notifications.sql` — Chat message notification trigger (notifies all conversation members on new message)
+9. `supabase/migrations/009_tags_and_mentions.sql` — Tags column on tasks (GIN-indexed), team_tags table for suggestions, mentions column on comments
 
 ## RBAC & Permissions
 

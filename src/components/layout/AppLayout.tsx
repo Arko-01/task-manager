@@ -2,6 +2,7 @@ import { useState, useCallback, useEffect } from 'react'
 import { Outlet } from 'react-router-dom'
 import { Sidebar } from './Sidebar'
 import { Header } from './Header'
+import { Breadcrumbs } from './Breadcrumbs'
 import { BottomNav } from './BottomNav'
 import { ChatPanel } from '../chat/ChatPanel'
 import { GlobalSearch } from '../search/GlobalSearch'
@@ -62,6 +63,7 @@ export function AppLayout() {
           onToggleChat={handleToggleChat}
         />
         <main className="flex-1 overflow-y-auto p-3 sm:p-6 pb-20 lg:pb-6">
+          <Breadcrumbs />
           <Outlet />
         </main>
       </div>

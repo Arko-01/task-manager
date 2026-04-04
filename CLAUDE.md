@@ -95,3 +95,13 @@ See: C:\Users\Asus\.claude\plans\snug-stargazing-kitten.md
 - Chat message notifications: migration 008 — DB trigger creates notification for all conversation members on new message (008_chat_message_notifications.sql)
 - Avatar xs size: added 20px "xs" variant for compact member lists (Avatar.tsx)
 - SQL migration 008 applied to production Supabase
+
+## Quick Wins from Enhancement Checklist v1.3 (April 2026) — COMPLETE
+- Forgot Password: "Forgot your password?" link on login, uses supabase.auth.resetPasswordForEmail (LoginForm.tsx)
+- Password strength meter: 4-criteria scoring (length≥8, uppercase, lowercase, number) with visual bars (SignupForm.tsx)
+- Breadcrumb navigation: Home > Page > Project trail in header area (Breadcrumbs.tsx, AppLayout.tsx)
+- Task/project count badges: task counts shown next to each project in sidebar (Sidebar.tsx, projectStore.ts)
+- Empty state designs: illustrations + CTAs for dashboard, project page, and filtered-out states (DashboardPage.tsx, ProjectPage.tsx)
+- Tags/Labels: tag pills on tasks, autocomplete input with team-scoped suggestions, GIN-indexed (TagInput.tsx, TaskDetail.tsx, TaskRow.tsx)
+- @mentions in comments: @ trigger shows team member dropdown, mentions highlighted in blue (CommentList.tsx)
+- SQL migration 009 (tags + mentions) applied to production Supabase

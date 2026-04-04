@@ -1,8 +1,22 @@
-import { useState, type FormEvent } from 'react'
+import { useState, useMemo, type FormEvent } from 'react'
 import { useAuthStore } from '../../store/authStore'
 import { Button } from '../ui/Button'
 import { Input } from '../ui/Input'
 import { useToast } from '../ui/Toast'
+
+function getPasswordStrength(pw: string): { level: 0 | 1 | 2 | 3; label: string; color: string; checks: { label: string; met: boolean }[] } {
+  const checks = [
+    { label: '8+ characters', met: pw.length >= 8 },
+    { label: 'Uppercase letter', met: /[A-Z]/.test(pw) },
+    { label: 'Lowercase letter', met: /[a-z]/.test(pw) },
+    { label: 'Number', met: /[0-9]/.test(pw) },
+  ]
+  const score = checks.filter((c) => c.met).length
+  if (score <= 1) return { level: 0, label: 'Weak', color: 'bg-red-500', checks }
+  if (score <= 2) return { level: 1, label: 'Fair', color: 'bg-orange-500', checks }
+  if (score <= 3) return { level: 2, label: 'Good', color: 'bg-yellow-500', checks }
+  return { level: 3, label: 'Strong', color: 'bg-green-500', checks }
+}
 
 export function SignupForm({ onSwitchToLogin }: { onSwitchToLogin: () => void }) {
   const [fullName, setFullName] = useState('')
@@ -27,8 +41,8 @@ export function SignupForm({ onSwitchToLogin }: { onSwitchToLogin: () => void })
     }
     if (!password) {
       newErrors.password = 'Password is required'
-    } else if (password.length < 6) {
-      newErrors.password = 'Password must be at least 6 characters'
+    } else if (password.length < 8) {
+      newErrors.password = 'Password must be at least 8 characters'
     }
     if (!confirmPassword) {
       newErrors.confirmPassword = 'Please confirm your password'
@@ -88,14 +102,17 @@ export function SignupForm({ onSwitchToLogin }: { onSwitchToLogin: () => void })
         error={errors.email}
       />
 
-      <Input
-        label="Password"
-        type="password"
-        value={password}
-        onChange={(e) => { setPassword(e.target.value); clearError('password') }}
-        placeholder="At least 6 characters"
-        error={errors.password}
-      />
+      <div>
+        <Input
+          label="Password"
+          type="password"
+          value={password}
+          onChange={(e) => { setPassword(e.target.value); clearError('password') }}
+          placeholder="At least 8 characters"
+          error={errors.password}
+        />
+        {password && <PasswordStrengthMeter password={password} />}
+      </div>
 
       <Input
         label="Confirm password"
@@ -117,5 +134,30 @@ export function SignupForm({ onSwitchToLogin }: { onSwitchToLogin: () => void })
         </button>
       </p>
     </form>
+  )
+}
+
+function PasswordStrengthMeter({ password }: { password: string }) {
+  const strength = useMemo(() => getPasswordStrength(password), [password])
+  return (
+    <div className="mt-2 space-y-1.5">
+      <div className="flex items-center gap-2">
+        <div className="flex flex-1 gap-1">
+          {[0, 1, 2, 3].map((i) => (
+            <div key={i} className={`h-1 flex-1 rounded-full transition-colors ${i <= strength.level ? strength.color : 'bg-gray-200 dark:bg-gray-700'}`} />
+          ))}
+        </div>
+        <span className={`text-xs font-medium ${strength.level >= 3 ? 'text-green-600' : strength.level >= 2 ? 'text-yellow-600' : 'text-red-500'}`}>
+          {strength.label}
+        </span>
+      </div>
+      <div className="flex flex-wrap gap-x-3 gap-y-0.5">
+        {strength.checks.map((c) => (
+          <span key={c.label} className={`text-[10px] ${c.met ? 'text-green-600 dark:text-green-400' : 'text-gray-400 dark:text-gray-500'}`}>
+            {c.met ? '✓' : '○'} {c.label}
+          </span>
+        ))}
+      </div>
+    </div>
   )
 }

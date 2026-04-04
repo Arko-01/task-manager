@@ -79,17 +79,24 @@ export function TaskRow({ task, onSelect, onStatusChange, level = 0, selected, o
           )}
         </button>
 
-        {/* Title */}
-        <span
-          onClick={() => onSelect(task)}
-          className={`flex-1 cursor-pointer truncate text-sm ${
+        {/* Title + Tags */}
+        <div onClick={() => onSelect(task)} className="flex-1 min-w-0 flex items-center gap-1.5 cursor-pointer">
+          <span className={`truncate text-sm ${
             task.status === 'done'
               ? 'text-gray-400 line-through dark:text-gray-500'
               : 'text-gray-900 dark:text-gray-100'
-          }`}
-        >
-          {task.title}
-        </span>
+          }`}>
+            {task.title}
+          </span>
+          {task.tags?.slice(0, 2).map((tag) => (
+            <span key={tag} className="shrink-0 rounded-full bg-primary-50 px-1.5 py-0 text-[10px] font-medium text-primary-600 dark:bg-primary-900/30 dark:text-primary-400">
+              {tag}
+            </span>
+          ))}
+          {(task.tags?.length || 0) > 2 && (
+            <span className="shrink-0 text-[10px] text-gray-400">+{(task.tags?.length || 0) - 2}</span>
+          )}
+        </div>
 
         {/* Status badge */}
         <Badge className={`${status.badgeClass} shrink-0`}>

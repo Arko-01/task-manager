@@ -1,13 +1,17 @@
 import { useState, type FormEvent } from 'react'
 import { useAuthStore } from '../../store/authStore'
+import { supabase } from '../../lib/supabase'
 import { Button } from '../ui/Button'
 import { Input } from '../ui/Input'
+import { useToast } from '../ui/Toast'
 
 export function LoginForm({ onSwitchToSignup }: { onSwitchToSignup: () => void }) {
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
   const [errors, setErrors] = useState<{ email?: string; password?: string; form?: string }>({})
+  const [resetLoading, setResetLoading] = useState(false)
   const { signIn, loading } = useAuthStore()
+  const { showToast } = useToast()
 
   const validate = () => {
     const newErrors: typeof errors = {}
@@ -20,6 +24,27 @@ export function LoginForm({ onSwitchToSignup }: { onSwitchToSignup: () => void }
       newErrors.password = 'Password is required'
     }
     return newErrors
+  }
+
+  const handleForgotPassword = async () => {
+    if (!email.trim()) {
+      setErrors({ email: 'Enter your email first, then click Forgot Password' })
+      return
+    }
+    if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
+      setErrors({ email: 'Please enter a valid email address' })
+      return
+    }
+    setResetLoading(true)
+    const { error } = await supabase.auth.resetPasswordForEmail(email, {
+      redirectTo: `${window.location.origin}/login`,
+    })
+    setResetLoading(false)
+    if (error) {
+      setErrors({ form: error.message })
+    } else {
+      showToast('Password reset email sent! Check your inbox.', 'success')
+    }
   }
 
   const handleSubmit = async (e: FormEvent) => {
@@ -61,14 +86,26 @@ export function LoginForm({ onSwitchToSignup }: { onSwitchToSignup: () => void }
         autoFocus
       />
 
-      <Input
-        label="Password"
-        type="password"
-        value={password}
-        onChange={(e) => { setPassword(e.target.value); setErrors((prev) => ({ ...prev, password: undefined, form: undefined })) }}
-        placeholder="Your password"
-        error={errors.password}
-      />
+      <div>
+        <Input
+          label="Password"
+          type="password"
+          value={password}
+          onChange={(e) => { setPassword(e.target.value); setErrors((prev) => ({ ...prev, password: undefined, form: undefined })) }}
+          placeholder="Your password"
+          error={errors.password}
+        />
+        <div className="mt-1 text-right">
+          <button
+            type="button"
+            onClick={handleForgotPassword}
+            disabled={resetLoading}
+            className="text-xs text-primary-600 hover:text-primary-700 dark:text-primary-400 dark:hover:text-primary-300"
+          >
+            {resetLoading ? 'Sending...' : 'Forgot your password?'}
+          </button>
+        </div>
+      </div>
 
       <Button type="submit" disabled={loading} className="w-full">
         {loading ? 'Signing in...' : 'Sign in'}

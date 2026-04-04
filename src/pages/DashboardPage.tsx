@@ -105,12 +105,12 @@ export function DashboardPage() {
       {/* Empty state */}
       {!loading && !tasks.length && (
         <div className="mt-12 text-center">
-          <div className="mx-auto mb-4 flex h-16 w-16 items-center justify-center rounded-full bg-gray-100 dark:bg-gray-800">
-            <span className="text-2xl">📋</span>
+          <div className="mx-auto mb-4 flex h-16 w-16 items-center justify-center rounded-full bg-primary-50 dark:bg-primary-900/20">
+            <span className="text-2xl">✨</span>
           </div>
-          <h2 className="text-lg font-medium text-gray-900 dark:text-gray-100">No tasks yet</h2>
-          <p className="mt-1 text-sm text-gray-500 dark:text-gray-400">
-            Create your first task or join a team to get started.
+          <h2 className="text-lg font-medium text-gray-900 dark:text-gray-100">No tasks assigned to you</h2>
+          <p className="mt-1 text-sm text-gray-500 dark:text-gray-400 max-w-xs mx-auto">
+            Use the quick add bar above to create your first task, or ask a team admin to assign one to you.
           </p>
         </div>
       )}

@@ -6,6 +6,7 @@ interface ProjectState {
   projects: Project[]
   currentProject: Project | null
   loading: boolean
+  taskCounts: Record<string, number>
   fetchProjects: (teamId: string) => Promise<void>
   selectProject: (projectId: string) => void
   createProject: (data: { name: string; emoji?: string; description?: string; start_date: string; end_date: string }) => Promise<{ error: string | null; project?: Project }>
@@ -18,16 +19,28 @@ export const useProjectStore = create<ProjectState>((set, get) => ({
   projects: [],
   currentProject: null,
   loading: false,
+  taskCounts: {},
 
   fetchProjects: async (teamId) => {
     set({ loading: true })
-    const { data } = await supabase
-      .from('projects')
-      .select('*')
-      .eq('team_id', teamId)
-      .order('is_default', { ascending: false })
-      .order('created_at')
-    set({ projects: data || [], loading: false })
+    const [{ data }, { data: counts }] = await Promise.all([
+      supabase
+        .from('projects')
+        .select('*')
+        .eq('team_id', teamId)
+        .order('is_default', { ascending: false })
+        .order('created_at'),
+      supabase
+        .from('tasks')
+        .select('project_id')
+        .is('deleted_at', null)
+        .is('parent_id', null),
+    ])
+    const taskCounts: Record<string, number> = {}
+    for (const t of counts || []) {
+      taskCounts[t.project_id] = (taskCounts[t.project_id] || 0) + 1
+    }
+    set({ projects: data || [], taskCounts, loading: false })
   },
 
   selectProject: (projectId) => {

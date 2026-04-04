@@ -14,6 +14,7 @@ import { BulkActions } from '../components/tasks/BulkActions'
 import { TaskTemplates } from '../components/tasks/TaskTemplates'
 import { ProgressBar } from '../components/ui/ProgressBar'
 import { Badge } from '../components/ui/Badge'
+import { QuickAddTask } from '../components/tasks/QuickAddTask'
 import { TaskListSkeleton, TaskBoardSkeleton } from '../components/ui/Skeleton'
 import { useToast } from '../components/ui/Toast'
 import type { ViewType, Task, TaskStatus, ProjectStatus } from '../types'
@@ -119,6 +120,13 @@ export function ProjectPage() {
         <TaskFilters showAssignee assigneeOptions={assigneeOptions} />
       </div>
 
+      {/* Quick add */}
+      {projectId && (
+        <div className="mb-4">
+          <QuickAddTask projectId={projectId} onCreated={() => fetchTasks(projectId)} />
+        </div>
+      )}
+
       {loading && (view === 'list' || view === 'calendar' || view === 'gantt' ? <TaskListSkeleton /> : <TaskBoardSkeleton />)}
 
       {!loading && (
@@ -166,6 +174,19 @@ export function ProjectPage() {
             </>
           )}
           {view === 'gantt' && <TaskGantt tasks={tasks} onSelectTask={handleSelectTask} />}
+
+          {/* Empty state */}
+          {!tasks.length && (
+            <div className="mt-12 text-center">
+              <div className="mx-auto mb-4 flex h-16 w-16 items-center justify-center rounded-full bg-primary-50 dark:bg-primary-900/20">
+                <span className="text-2xl">📝</span>
+              </div>
+              <h2 className="text-lg font-medium text-gray-900 dark:text-gray-100">No tasks in this project</h2>
+              <p className="mt-1 text-sm text-gray-500 dark:text-gray-400 max-w-xs mx-auto">
+                Use the quick add bar above to create your first task, or use a template to get started.
+              </p>
+            </div>
+          )}
         </>
       )}
 

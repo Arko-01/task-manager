@@ -7,6 +7,7 @@ import { AssigneeSelector } from './AssigneeSelector'
 import { DependencySelector } from './DependencySelector'
 import { RecurrenceSelector } from './RecurrenceSelector'
 import { CommentList } from './CommentList'
+import { TagInput } from './TagInput'
 import { QuickAddTask } from './QuickAddTask'
 import { usePermissions } from '../../hooks/usePermissions'
 import { STATUS_CONFIG, PRIORITY_CONFIG } from '../../types'
@@ -200,6 +201,13 @@ export function TaskDetail({ task, onClose }: Props) {
         {canEdit && (
           <DependencySelector taskId={task.id} dependencies={task.dependencies || []} />
         )}
+
+        {/* Tags */}
+        <TagInput
+          tags={task.tags || []}
+          onChange={(tags) => save({ tags })}
+          disabled={!canEdit}
+        />
 
         {/* Sub-tasks */}
         {task.depth < 2 && (

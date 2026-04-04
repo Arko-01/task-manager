@@ -11,7 +11,7 @@ import { CreateProjectModal } from '../project/CreateProjectModal'
 export function Sidebar({ collapsed, onCollapse: _onCollapse }: { collapsed: boolean; onCollapse: () => void }) {
   const { profile, signOut } = useAuthStore()
   const { currentTeam, fetchTeams, members } = useTeamStore()
-  const { projects, fetchProjects } = useProjectStore()
+  const { projects, fetchProjects, taskCounts } = useProjectStore()
   const navigate = useNavigate()
   const location = useLocation()
   const [showInvite, setShowInvite] = useState(false)
@@ -98,7 +98,10 @@ export function Sidebar({ collapsed, onCollapse: _onCollapse }: { collapsed: boo
                 className={navItemClass(`/projects/${project.id}`)}
               >
                 <span className="text-base leading-none">{project.emoji || '📁'}</span>
-                <span className="truncate">{project.name}</span>
+                <span className="truncate flex-1">{project.name}</span>
+                {taskCounts[project.id] > 0 && (
+                  <span className="text-[10px] text-gray-400 dark:text-gray-500 tabular-nums">{taskCounts[project.id]}</span>
+                )}
               </div>
             ))}
 
