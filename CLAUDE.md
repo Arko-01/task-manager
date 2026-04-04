@@ -105,3 +105,78 @@ See: C:\Users\Asus\.claude\plans\snug-stargazing-kitten.md
 - Tags/Labels: tag pills on tasks, autocomplete input with team-scoped suggestions, GIN-indexed (TagInput.tsx, TaskDetail.tsx, TaskRow.tsx)
 - @mentions in comments: @ trigger shows team member dropdown, mentions highlighted in blue (CommentList.tsx)
 - SQL migration 009 (tags + mentions) applied to production Supabase
+
+## Enhancement Checklist v1.3 — Full Implementation (April 2026) — COMPLETE
+52 items implemented across 12 phases. Migration 010 applied to production Supabase.
+
+### Phase 0: Foundation
+- Migration 010: task types, time tracking, milestones, templates, project deps, activity/audit logs, FTS, favorites, archive, extended roles, profile extensions, brand customization
+- Types updated: TaskType, Milestone, ProjectTemplate, ProjectDependency, ActivityLogEntry, AuditLogEntry, UserProjectPin
+- NPM packages: nprogress, react-markdown, remark-gfm, recharts, jspdf
+
+### Phase 1: Core Task Enhancements (A3, A4)
+- Task types with icons (ad_hoc, project, recurring, system, subtask) — TaskTypeIcon.tsx
+- Recurring task visibility with frequency badges — RecurrenceBadge.tsx
+- Time tracking widget — TimeTracker.tsx
+- Duplicate task detection on creation — DuplicateWarning.tsx
+- Rich text comments with Markdown preview — MarkdownEditor.tsx
+- Custom statuses per project — CustomStatusEditor.tsx
+- Task subscription notification levels (all/mentions/none)
+
+### Phase 2: Navigation & Search (A2, A6)
+- NProgress loading bar on route transitions — useNProgress.ts
+- Favorites & recent projects in sidebar — projectStore.ts, Sidebar.tsx
+- Enhanced search: @name, #tag, due:range structured queries — GlobalSearch.tsx
+- Active filter pills with dismiss — FilterPills.tsx
+
+### Phase 3: New Views (A5)
+- Hover-to-expand task preview — TaskHoverPreview.tsx
+- Spreadsheet/table view with sortable columns — TaskTable.tsx
+- Reports/analytics: status pie, workload bar, priority pie, completions line — ReportsView.tsx
+
+### Phase 4: Project Management (B1)
+- Project templates with task blueprints — ProjectTemplateList.tsx
+- Project dependencies with warnings — ProjectDependencies.tsx
+- Milestones with progress bars — MilestoneList.tsx, MilestoneSelector.tsx
+- Workspace folders (project hierarchy) — ProjectFolderTree.tsx
+
+### Phase 5: Team & Collaboration (B2, B3-B5)
+- Extended roles: project_lead, task_lead added to RBAC
+- Member profile hover cards (bio, skills, timezone) — MemberProfile.tsx
+- Activity feed from activity_log table — ActivityFeed.tsx
+- Scheduled messages in chat — ScheduleMessageModal.tsx
+
+### Phase 6: Mobile (A7)
+- Mobile task creation via FAB + bottom sheet — MobileTaskCreate.tsx, BottomSheet.tsx
+- Calendar week view default on mobile
+- Gantt narrower left panel + touch scroll on mobile
+
+### Phase 7: Micro-interactions (D1)
+- Status toggle scale animation, card hover/active effects
+- DnD column highlight on drag over
+- Toast stack limit (3) with undo support
+- Skeleton varied widths, NProgress bar styling
+
+### Phase 8: Onboarding & Help (D2)
+- Expanded welcome checklist (7 steps) — WelcomeGuide.tsx
+- Custom 5-step interactive tour with SVG overlay — InteractiveTour.tsx
+- Contextual "?" help tooltips — HelpTooltip.tsx
+
+### Phase 9: Customization & Export (D3, D4, B5)
+- Brand color picker + logo upload — AppearanceSettings.tsx
+- Audit log viewer — AuditLogViewer.tsx
+- CSV export — ExportCSV.tsx
+- PDF export via jsPDF — ExportPDF.tsx
+- iCal calendar export — CalendarExport.tsx
+
+### Phase 10: Performance (C, E)
+- Error code system (TM-1001 to TM-5001) — errors.ts
+- Focus trap for modals — useFocusTrap.ts
+- Lazy avatar loading with blur placeholder — Avatar.tsx
+- Task archiving + archived tasks viewer — ArchivedTasks.tsx
+- FTS via PostgreSQL tsvector + GIN index
+
+### Phase 11: Documentation (F)
+- Help page with FAQ, troubleshooting, team setup guide — HelpPage.tsx
+- System status page — StatusPage.tsx
+- Routes: /help, /status

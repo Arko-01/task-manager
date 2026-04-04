@@ -4,6 +4,7 @@ import { useTaskStore } from '../../store/taskStore'
 import { useProjectStore } from '../../store/projectStore'
 import { useToast } from '../ui/Toast'
 import { usePermissions } from '../../hooks/usePermissions'
+import { DuplicateWarning } from './DuplicateWarning'
 import type { TaskStatus } from '../../types'
 
 interface Props {
@@ -53,7 +54,10 @@ export function QuickAddTask({ projectId, parentId, status = 'todo', onCreated }
     }
   }
 
+  const [dismissed, setDismissed] = useState(false)
+
   return (
+    <div className="space-y-2">
     <form onSubmit={handleSubmit} className="flex items-center gap-2">
       <div className="flex flex-1 items-center gap-2 rounded-lg border border-dashed border-gray-300 px-3 py-1.5 focus-within:border-primary-500 dark:border-gray-600 dark:focus-within:border-primary-500">
         <Plus size={16} className="text-gray-400 shrink-0" />
@@ -91,7 +95,7 @@ export function QuickAddTask({ projectId, parentId, status = 'todo', onCreated }
         <input
           type="text"
           value={title}
-          onChange={(e) => setTitle(e.target.value)}
+          onChange={(e) => { setTitle(e.target.value); setDismissed(false) }}
           placeholder="Add a task..."
           aria-label="New task title"
           className="flex-1 bg-transparent text-sm text-gray-900 placeholder:text-gray-400 focus:outline-none dark:text-gray-100 dark:placeholder:text-gray-500"
@@ -99,5 +103,9 @@ export function QuickAddTask({ projectId, parentId, status = 'todo', onCreated }
         />
       </div>
     </form>
+    {title.length >= 3 && effectiveProjectId && !dismissed && (
+      <DuplicateWarning title={title} projectId={effectiveProjectId} onDismiss={() => setDismissed(true)} />
+    )}
+    </div>
   )
 }

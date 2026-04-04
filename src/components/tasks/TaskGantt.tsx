@@ -1,4 +1,4 @@
-import { useMemo, useRef } from 'react'
+import { useMemo, useRef, useState, useEffect } from 'react'
 import { PRIORITY_CONFIG } from '../../types'
 import type { Task } from '../../types'
 
@@ -10,6 +10,13 @@ interface Props {
 export function TaskGantt({ tasks, onSelectTask }: Props) {
   const rootTasks = useMemo(() => tasks.filter((t) => !t.parent_id), [tasks])
   const containerRef = useRef<HTMLDivElement>(null)
+  const [isMobile, setIsMobile] = useState(window.innerWidth < 640)
+
+  useEffect(() => {
+    const handleResize = () => setIsMobile(window.innerWidth < 640)
+    window.addEventListener('resize', handleResize)
+    return () => window.removeEventListener('resize', handleResize)
+  }, [])
 
   // Calculate date range
   const { minDate, maxDate, totalDays } = useMemo(() => {
@@ -82,24 +89,33 @@ export function TaskGantt({ tasks, onSelectTask }: Props) {
     <div className="rounded-lg border border-gray-200 bg-white dark:border-gray-800 dark:bg-gray-900 overflow-hidden">
       <div className="flex">
         {/* Left: Task names */}
-        <div className="w-56 shrink-0 border-r border-gray-200 dark:border-gray-800">
+        <div className={`${isMobile ? 'w-32' : 'w-56'} shrink-0 border-r border-gray-200 dark:border-gray-800`}>
           <div className="h-8 border-b border-gray-200 bg-gray-50 px-3 flex items-center dark:border-gray-800 dark:bg-gray-800/50">
             <span className="text-xs font-medium text-gray-500 dark:text-gray-400">Task</span>
           </div>
-          {rootTasks.map((task) => (
-            <div
-              key={task.id}
-              onClick={() => onSelectTask(task)}
-              className="flex items-center gap-2 border-b border-gray-100 px-3 py-2 cursor-pointer hover:bg-gray-50 dark:border-gray-800 dark:hover:bg-gray-800/50 h-10"
-            >
-              <span className={`h-2 w-2 rounded-full shrink-0 ${PRIORITY_CONFIG[task.priority].dotClass}`} />
-              <span className="truncate text-sm text-gray-700 dark:text-gray-300">{task.title}</span>
-            </div>
-          ))}
+          {rootTasks.map((task) => {
+            const displayTitle = isMobile && task.title.length > 14
+              ? task.title.slice(0, 14) + '...'
+              : task.title
+            return (
+              <div
+                key={task.id}
+                onClick={() => onSelectTask(task)}
+                className="flex items-center gap-2 border-b border-gray-100 px-3 py-2 cursor-pointer hover:bg-gray-50 dark:border-gray-800 dark:hover:bg-gray-800/50 h-10"
+              >
+                <span className={`h-2 w-2 rounded-full shrink-0 ${PRIORITY_CONFIG[task.priority].dotClass}`} />
+                <span className="truncate text-sm text-gray-700 dark:text-gray-300" title={task.title}>{displayTitle}</span>
+              </div>
+            )
+          })}
         </div>
 
         {/* Right: Timeline */}
-        <div className="flex-1 overflow-x-auto" ref={containerRef}>
+        <div className="relative flex-1 overflow-x-auto touch-pan-x" ref={containerRef}>
+          {/* Horizontal scroll hint gradient (mobile) */}
+          {isMobile && (
+            <div className="pointer-events-none absolute right-0 top-0 bottom-0 z-10 w-6 bg-gradient-to-l from-white dark:from-gray-900" />
+          )}
           <div className="relative min-w-[600px]">
             {/* Month headers */}
             <div className="h-8 border-b border-gray-200 bg-gray-50 dark:border-gray-800 dark:bg-gray-800/50 relative">

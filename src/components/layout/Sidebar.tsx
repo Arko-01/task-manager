@@ -2,16 +2,17 @@ import { useEffect, useState } from 'react'
 import { useAuthStore } from '../../store/authStore'
 import { useTeamStore } from '../../store/teamStore'
 import { useProjectStore } from '../../store/projectStore'
-import { LayoutDashboard, Settings, LogOut, Plus, Inbox, Users, Trash2, User } from 'lucide-react'
+import { LayoutDashboard, Settings, LogOut, Plus, Inbox, Users, Trash2, User, Star, HelpCircle } from 'lucide-react'
 import { useNavigate, useLocation } from 'react-router-dom'
 import { TeamSwitcher } from '../team/TeamSwitcher'
 import { InviteModal } from '../team/InviteModal'
 import { CreateProjectModal } from '../project/CreateProjectModal'
+import { ProjectFolderTree } from '../project/ProjectFolderTree'
 
 export function Sidebar({ collapsed, onCollapse: _onCollapse }: { collapsed: boolean; onCollapse: () => void }) {
   const { profile, signOut } = useAuthStore()
   const { currentTeam, fetchTeams, members } = useTeamStore()
-  const { projects, fetchProjects, taskCounts } = useProjectStore()
+  const { projects, fetchProjects, taskCounts, favorites, recentProjects, toggleFavorite, trackVisit, fetchFavorites, fetchRecentProjects } = useProjectStore()
   const navigate = useNavigate()
   const location = useLocation()
   const [showInvite, setShowInvite] = useState(false)
@@ -24,8 +25,10 @@ export function Sidebar({ collapsed, onCollapse: _onCollapse }: { collapsed: boo
   useEffect(() => {
     if (currentTeam) {
       fetchProjects(currentTeam.id)
+      fetchFavorites()
+      fetchRecentProjects()
     }
-  }, [currentTeam, fetchProjects])
+  }, [currentTeam, fetchProjects, fetchFavorites, fetchRecentProjects])
 
   const isActive = (path: string) => location.pathname === path
 
@@ -40,17 +43,7 @@ export function Sidebar({ collapsed, onCollapse: _onCollapse }: { collapsed: boo
   const currentMember = members.find((m) => m.user_id === profile?.id)
   const isAdmin = currentMember?.role === 'admin' || currentMember?.permissions?.full_access
 
-  const [showAllProjects, setShowAllProjects] = useState(false)
-
-  const sortedProjects = [...projects].sort((a, b) => {
-    if (a.is_default && !b.is_default) return -1
-    if (!a.is_default && b.is_default) return 1
-    return new Date(a.created_at).getTime() - new Date(b.created_at).getTime()
-  })
-
-  const PROJECT_COLLAPSE_LIMIT = 5
-  const visibleProjects = showAllProjects ? sortedProjects : sortedProjects.slice(0, PROJECT_COLLAPSE_LIMIT)
-  const hasMoreProjects = sortedProjects.length > PROJECT_COLLAPSE_LIMIT
+  const currentProjectId = location.pathname.match(/\/projects\/(.+)/)?.[1] || null
 
   if (collapsed) return null
 
@@ -75,6 +68,62 @@ export function Sidebar({ collapsed, onCollapse: _onCollapse }: { collapsed: boo
           </div>
         )}
 
+        {/* Favorites Section */}
+        {currentTeam && favorites.length > 0 && (
+          <div className="pt-6">
+            <div className="flex items-center px-3 mb-2">
+              <span className="text-xs font-medium uppercase tracking-wider text-gray-500 dark:text-gray-400">
+                Favorites
+              </span>
+            </div>
+            {favorites
+              .map((id) => projects.find((p) => p.id === id))
+              .filter(Boolean)
+              .map((project) => (
+                <div
+                  key={project!.id}
+                  onClick={() => { trackVisit(project!.id); navigate(`/projects/${project!.id}`) }}
+                  className={navItemClass(`/projects/${project!.id}`)}
+                >
+                  <span className="text-base leading-none">{project!.emoji || '📁'}</span>
+                  <span className="truncate flex-1">{project!.name}</span>
+                  <button
+                    onClick={(e) => { e.stopPropagation(); toggleFavorite(project!.id) }}
+                    className="shrink-0 text-amber-400 hover:text-amber-500"
+                    title="Remove from favorites"
+                  >
+                    <Star size={14} fill="currentColor" />
+                  </button>
+                </div>
+              ))}
+          </div>
+        )}
+
+        {/* Recent Section */}
+        {currentTeam && recentProjects.length > 0 && (
+          <div className="pt-4">
+            <div className="flex items-center px-3 mb-2">
+              <span className="text-xs font-medium uppercase tracking-wider text-gray-500 dark:text-gray-400">
+                Recent
+              </span>
+            </div>
+            {recentProjects
+              .slice(0, 3)
+              .map((id) => projects.find((p) => p.id === id))
+              .filter(Boolean)
+              .map((project) => (
+                <div
+                  key={project!.id}
+                  onClick={() => { trackVisit(project!.id); navigate(`/projects/${project!.id}`) }}
+                  className={navItemClass(`/projects/${project!.id}`)}
+                >
+                  <span className="text-base leading-none">{project!.emoji || '📁'}</span>
+                  <span className="truncate flex-1">{project!.name}</span>
+                </div>
+              ))}
+          </div>
+        )}
+
         {/* Projects Section */}
         {currentTeam && (
           <div className="pt-6">
@@ -91,32 +140,14 @@ export function Sidebar({ collapsed, onCollapse: _onCollapse }: { collapsed: boo
               </button>
             </div>
 
-            {visibleProjects.map((project) => (
-              <div
-                key={project.id}
-                onClick={() => navigate(`/projects/${project.id}`)}
-                className={navItemClass(`/projects/${project.id}`)}
-              >
-                <span className="text-base leading-none">{project.emoji || '📁'}</span>
-                <span className="truncate flex-1">{project.name}</span>
-                {taskCounts[project.id] > 0 && (
-                  <span className="text-[10px] text-gray-400 dark:text-gray-500 tabular-nums">{taskCounts[project.id]}</span>
-                )}
-              </div>
-            ))}
-
-            {hasMoreProjects && (
-              <button
-                onClick={() => setShowAllProjects(!showAllProjects)}
-                className="flex items-center gap-2 px-3 py-1.5 text-xs text-gray-400 hover:text-gray-600 dark:text-gray-500 dark:hover:text-gray-300"
-              >
-                {showAllProjects ? 'Show less' : `Show all (${sortedProjects.length})`}
-              </button>
-            )}
-
-            {!projects.length && (
-              <p className="px-3 py-2 text-xs text-gray-400 dark:text-gray-500">No projects yet</p>
-            )}
+            <ProjectFolderTree
+              projects={projects}
+              currentProjectId={currentProjectId}
+              onSelect={(id) => { trackVisit(id); navigate(`/projects/${id}`) }}
+              taskCounts={taskCounts}
+              favorites={favorites}
+              onToggleFavorite={toggleFavorite}
+            />
           </div>
         )}
 
@@ -142,6 +173,14 @@ export function Sidebar({ collapsed, onCollapse: _onCollapse }: { collapsed: boo
             </div>
           </div>
         )}
+
+        {/* Help Link */}
+        <div className="pt-4 mt-auto">
+          <div onClick={() => navigate('/help')} className={navItemClass('/help')}>
+            <HelpCircle size={18} />
+            <span>Help</span>
+          </div>
+        </div>
       </nav>
 
       {/* User Footer */}

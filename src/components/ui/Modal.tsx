@@ -1,5 +1,6 @@
 import { type ReactNode, useEffect } from 'react'
 import { X } from 'lucide-react'
+import { useFocusTrap } from '../../hooks/useFocusTrap'
 
 interface ModalProps {
   open: boolean
@@ -17,6 +18,8 @@ const sizes = {
 }
 
 export function Modal({ open, onClose, title, children, size = 'md' }: ModalProps) {
+  const focusTrapRef = useFocusTrap(open)
+
   useEffect(() => {
     if (!open) return
     const handler = (e: KeyboardEvent) => {
@@ -31,7 +34,7 @@ export function Modal({ open, onClose, title, children, size = 'md' }: ModalProp
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center" role="dialog" aria-modal="true" aria-label={title || 'Dialog'}>
       <div className="fixed inset-0 bg-black/40" onClick={onClose} aria-hidden="true" />
-      <div className={`relative w-full ${sizes[size]} rounded-xl bg-white p-6 shadow-xl dark:bg-gray-900 mx-4`}>
+      <div ref={focusTrapRef} className={`relative w-full ${sizes[size]} rounded-xl bg-white p-6 shadow-xl dark:bg-gray-900 mx-4`}>
         {title && (
           <div className="mb-4 flex items-center justify-between">
             <h2 className="text-lg font-semibold text-gray-900 dark:text-gray-100">{title}</h2>

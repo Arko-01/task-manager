@@ -15,6 +15,8 @@ interface ChatState {
   sendMessage: (content: string) => Promise<{ error: string | null }>
   markRead: (messageId: string) => Promise<void>
   markAllRead: (conversationId: string) => Promise<void>
+  scheduleMessage: (content: string, scheduledAt: string) => Promise<{ error: string | null }>
+  createThreadFromComment: (taskId: string, commentContent: string, assigneeIds: string[]) => Promise<{ error: string | null; conversationId?: string }>
   subscribeToMessages: () => () => void
 }
 
@@ -241,6 +243,65 @@ export const useChatStore = create<ChatState>((set, get) => ({
         c.id === conversationId ? { ...c, unread_count: 0 } : c
       ),
     }))
+  },
+
+  scheduleMessage: async (content, scheduledAt) => {
+    const { data: { user } } = await supabase.auth.getUser()
+    if (!user) return { error: 'Not authenticated' }
+    const conv = get().currentConversation
+    if (!conv) return { error: 'No conversation selected' }
+
+    const { error } = await supabase
+      .from('messages')
+      .insert({
+        conversation_id: conv.id,
+        sender_id: user.id,
+        content,
+        scheduled_at: scheduledAt,
+        is_sent: false,
+      })
+
+    if (error) return { error: error.message }
+    return { error: null }
+  },
+
+  createThreadFromComment: async (taskId, commentContent, assigneeIds) => {
+    const { data: { user } } = await supabase.auth.getUser()
+    if (!user) return { error: 'Not authenticated' }
+
+    const teamStore = (await import('./teamStore')).useTeamStore.getState()
+    const team = teamStore.currentTeam
+    if (!team) return { error: 'No team selected' }
+
+    // Create a group conversation for the thread
+    const { data: conv, error } = await supabase
+      .from('conversations')
+      .insert({
+        type: 'group',
+        team_id: team.id,
+        name: `Thread: Task discussion`,
+        created_by: user.id,
+      })
+      .select()
+      .single()
+
+    if (error) return { error: error.message }
+
+    // Add members: current user + assignees
+    const allMembers = [...new Set([user.id, ...assigneeIds])]
+    await supabase.from('conversation_members').insert(
+      allMembers.map((uid) => ({ conversation_id: conv.id, user_id: uid }))
+    )
+
+    // Send the initial message with the comment content and task link
+    await supabase.from('messages').insert({
+      conversation_id: conv.id,
+      sender_id: user.id,
+      content: `**Thread from task comment:**\n\n${commentContent}\n\n---\n*Linked to task \`${taskId}\`*`,
+    })
+
+    await get().fetchConversations()
+    return { error: null, conversationId: conv.id }
   },
 
   subscribeToMessages: () => {

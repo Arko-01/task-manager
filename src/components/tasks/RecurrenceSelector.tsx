@@ -1,5 +1,6 @@
 import { useState } from 'react'
 import { Repeat } from 'lucide-react'
+import { HelpTooltip } from '../ui/HelpTooltip'
 import type { RecurrencePattern } from '../../types'
 
 interface Props {
@@ -49,9 +50,12 @@ export function RecurrenceSelector({ isRecurring, pattern, onChange }: Props) {
 
   return (
     <div className="space-y-2">
-      <label className="text-xs font-medium uppercase tracking-wider text-gray-500 dark:text-gray-400">
-        Recurrence
-      </label>
+      <div className="flex items-center gap-1.5">
+        <label className="text-xs font-medium uppercase tracking-wider text-gray-500 dark:text-gray-400">
+          Recurrence
+        </label>
+        <HelpTooltip text="Recurring tasks repeat automatically on a schedule. Set a daily, weekly, or monthly pattern with an optional end date." />
+      </div>
 
       <button
         onClick={() => isRecurring ? setExpanded(!expanded) : handleToggle()}

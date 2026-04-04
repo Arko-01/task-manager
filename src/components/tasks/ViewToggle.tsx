@@ -1,4 +1,4 @@
-import { List, LayoutGrid, Calendar, BarChart3 } from 'lucide-react'
+import { List, LayoutGrid, Calendar, BarChart3, Table2, ChartBar } from 'lucide-react'
 import type { ViewType } from '../../types'
 
 interface Props {
@@ -11,6 +11,8 @@ const views: { type: ViewType; icon: typeof List; label: string }[] = [
   { type: 'board', icon: LayoutGrid, label: 'Board' },
   { type: 'calendar', icon: Calendar, label: 'Calendar' },
   { type: 'gantt', icon: BarChart3, label: 'Gantt' },
+  { type: 'table', icon: Table2, label: 'Table' },
+  { type: 'reports', icon: ChartBar, label: 'Reports' },
 ]
 
 export function ViewToggle({ current, onChange }: Props) {

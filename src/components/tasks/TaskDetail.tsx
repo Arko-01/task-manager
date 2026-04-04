@@ -9,9 +9,14 @@ import { RecurrenceSelector } from './RecurrenceSelector'
 import { CommentList } from './CommentList'
 import { TagInput } from './TagInput'
 import { QuickAddTask } from './QuickAddTask'
+import { TaskTypeIcon } from './TaskTypeIcon'
+import { TimeTracker } from './TimeTracker'
+import { MarkdownEditor } from './MarkdownEditor'
+import { MilestoneSelector } from '../project/MilestoneSelector'
+import { useProjectStore } from '../../store/projectStore'
 import { usePermissions } from '../../hooks/usePermissions'
-import { STATUS_CONFIG, PRIORITY_CONFIG } from '../../types'
-import type { Task, TaskStatus, TaskPriority } from '../../types'
+import { STATUS_CONFIG, PRIORITY_CONFIG, TASK_TYPE_CONFIG } from '../../types'
+import type { Task, TaskStatus, TaskPriority, TaskType } from '../../types'
 
 interface Props {
   task: Task
@@ -20,6 +25,7 @@ interface Props {
 
 export function TaskDetail({ task, onClose }: Props) {
   const { updateTask, deleteTask, duplicateTask } = useTaskStore()
+  const { milestones } = useProjectStore()
   const { showToast } = useToast()
   const { can, canEditTask } = usePermissions()
   const canEdit = canEditTask(task.created_by)
@@ -30,6 +36,7 @@ export function TaskDetail({ task, onClose }: Props) {
   const [priority, setPriority] = useState(task.priority)
   const [startDate, setStartDate] = useState(task.start_date)
   const [endDate, setEndDate] = useState(task.end_date)
+  const [taskType, setTaskType] = useState<TaskType>(task.task_type)
 
   useEffect(() => {
     setTitle(task.title)
@@ -38,6 +45,7 @@ export function TaskDetail({ task, onClose }: Props) {
     setPriority(task.priority)
     setStartDate(task.start_date)
     setEndDate(task.end_date)
+    setTaskType(task.task_type)
   }, [task])
 
   const save = async (data: Partial<Task>) => {
@@ -136,6 +144,24 @@ export function TaskDetail({ task, onClose }: Props) {
           </div>
         </div>
 
+        {/* Task Type */}
+        <div className="space-y-1">
+          <label className="text-xs font-medium uppercase tracking-wider text-gray-500 dark:text-gray-400">Type</label>
+          <div className="flex items-center gap-2">
+            <TaskTypeIcon type={taskType} size={16} />
+            <select
+              value={taskType}
+              onChange={(e) => { const t = e.target.value as TaskType; setTaskType(t); save({ task_type: t }) }}
+              disabled={!canEdit}
+              className={`flex-1 rounded-lg border border-gray-200 bg-white px-2 py-1.5 text-sm dark:border-gray-700 dark:bg-gray-800 dark:text-gray-100 ${!canEdit ? 'opacity-60 cursor-not-allowed' : ''}`}
+            >
+              {Object.entries(TASK_TYPE_CONFIG).map(([k, v]) => (
+                <option key={k} value={k}>{v.label}</option>
+              ))}
+            </select>
+          </div>
+        </div>
+
         {/* Dates */}
         <div className="grid grid-cols-2 gap-3">
           <div className="space-y-1">
@@ -171,19 +197,30 @@ export function TaskDetail({ task, onClose }: Props) {
           </div>
         </div>
 
+        {/* Milestone */}
+        {milestones.length > 0 && (
+          <MilestoneSelector
+            milestones={milestones}
+            value={task.milestone_id}
+            onChange={(id) => save({ milestone_id: id })}
+            disabled={!canEdit}
+          />
+        )}
+
         {/* Description */}
-        <div className="space-y-1">
+        <div className="space-y-1" onBlur={handleDescBlur}>
           <label className="text-xs font-medium uppercase tracking-wider text-gray-500 dark:text-gray-400">Description</label>
-          <textarea
+          <MarkdownEditor
             value={description}
-            onChange={(e) => setDescription(e.target.value)}
-            onBlur={handleDescBlur}
+            onChange={setDescription}
             placeholder={canEdit ? "Add a description..." : "No description"}
-            rows={3}
             readOnly={!canEdit}
-            className={`w-full rounded-lg border border-gray-200 bg-white px-3 py-2 text-sm text-gray-900 placeholder:text-gray-400 focus:border-primary-500 focus:outline-none dark:border-gray-700 dark:bg-gray-800 dark:text-gray-100 dark:placeholder:text-gray-500 ${!canEdit ? 'opacity-60 cursor-default' : ''}`}
+            rows={4}
           />
         </div>
+
+        {/* Time Tracker */}
+        <TimeTracker taskId={task.id} timeSpent={task.time_spent_days || 0} canEdit={canEdit} />
 
         {/* Assignees */}
         <AssigneeSelector taskId={task.id} assignees={task.assignees || []} readOnly={!canEdit} />

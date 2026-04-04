@@ -13,6 +13,46 @@ interface SearchResult {
   project?: { id: string; name: string; emoji: string | null }
 }
 
+interface ParsedQuery {
+  text: string
+  assignee?: string
+  tag?: string
+  dateFrom?: string
+  dateTo?: string
+}
+
+function parseSearchQuery(raw: string): ParsedQuery {
+  let text = raw
+  let assignee: string | undefined
+  let tag: string | undefined
+  let dateFrom: string | undefined
+  let dateTo: string | undefined
+
+  // Extract @name tokens
+  const assigneeMatch = text.match(/@(\S+)/)
+  if (assigneeMatch) {
+    assignee = assigneeMatch[1]
+    text = text.replace(assigneeMatch[0], '').trim()
+  }
+
+  // Extract #tag tokens
+  const tagMatch = text.match(/#(\S+)/)
+  if (tagMatch) {
+    tag = tagMatch[1]
+    text = text.replace(tagMatch[0], '').trim()
+  }
+
+  // Extract due:YYYY-MM-DD..YYYY-MM-DD tokens
+  const dateMatch = text.match(/due:(\d{4}-\d{2}-\d{2})\.\.(\d{4}-\d{2}-\d{2})/)
+  if (dateMatch) {
+    dateFrom = dateMatch[1]
+    dateTo = dateMatch[2]
+    text = text.replace(dateMatch[0], '').trim()
+  }
+
+  return { text, assignee, tag, dateFrom, dateTo }
+}
+
 interface QuickAction {
   id: string
   label: string
@@ -65,13 +105,45 @@ export function GlobalSearch() {
       return
     }
     setLoading(true)
-    const { data } = await supabase
+
+    const parsed = parseSearchQuery(term)
+
+    let query = supabase
       .from('tasks')
       .select('id, title, description, status, project_id, project:projects(id, name, emoji)')
       .is('deleted_at', null)
-      .or(`title.ilike.%${term}%,description.ilike.%${term}%`)
-      .limit(20)
-    setResults((data as unknown as SearchResult[]) || [])
+
+    // Text search: use full-text search if available, fall back to ilike
+    if (parsed.text) {
+      query = query.textSearch('fts', parsed.text, { type: 'websearch', config: 'english' })
+    }
+
+    // Tag filter
+    if (parsed.tag) {
+      query = query.contains('tags', [parsed.tag])
+    }
+
+    // Date range filter
+    if (parsed.dateFrom && parsed.dateTo) {
+      query = query.gte('end_date', parsed.dateFrom).lte('end_date', parsed.dateTo)
+    }
+
+    query = query.limit(20)
+
+    const { data } = await query
+    let results = (data as unknown as SearchResult[]) || []
+
+    // Assignee filter: post-filter since task_assignees is a separate table
+    if (parsed.assignee) {
+      const { data: assigneeTaskIds } = await supabase
+        .from('task_assignees')
+        .select('task_id, profile:profiles!task_assignees_user_id_fkey(full_name)')
+        .ilike('profile.full_name', `%${parsed.assignee}%`)
+      const matchingIds = new Set((assigneeTaskIds || []).map((a) => a.task_id))
+      results = results.filter((r) => matchingIds.has(r.id))
+    }
+
+    setResults(results)
     setSelectedIndex(0)
     setLoading(false)
   }, [])
@@ -126,7 +198,7 @@ export function GlobalSearch() {
             value={query}
             onChange={(e) => handleChange(e.target.value)}
             onKeyDown={handleKeyDown}
-            placeholder="Search tasks or type a command..."
+            placeholder="Search tasks... @name #tag due:YYYY-MM-DD..YYYY-MM-DD"
             className="w-full rounded-lg border border-gray-200 bg-gray-50 py-2.5 pl-10 pr-10 text-sm text-gray-900 placeholder:text-gray-400 focus:border-primary-500 focus:bg-white focus:outline-none focus:ring-1 focus:ring-primary-500 dark:border-gray-700 dark:bg-gray-800 dark:text-gray-100 dark:placeholder:text-gray-500 dark:focus:bg-gray-800"
           />
           {query && (
@@ -198,10 +270,11 @@ export function GlobalSearch() {
           )}
         </div>
 
-        <div className="flex items-center gap-3 border-t border-gray-100 px-3 pt-2 text-[10px] text-gray-400 dark:border-gray-800">
+        <div className="flex flex-wrap items-center gap-3 border-t border-gray-100 px-3 pt-2 text-[10px] text-gray-400 dark:border-gray-800">
           <span><kbd className="rounded bg-gray-100 px-1 dark:bg-gray-700">↑↓</kbd> navigate</span>
           <span><kbd className="rounded bg-gray-100 px-1 dark:bg-gray-700">↵</kbd> select</span>
           <span><kbd className="rounded bg-gray-100 px-1 dark:bg-gray-700">esc</kbd> close</span>
+          <span className="ml-auto"><kbd className="rounded bg-gray-100 px-1 dark:bg-gray-700">@</kbd> assignee <kbd className="rounded bg-gray-100 px-1 dark:bg-gray-700">#</kbd> tag <kbd className="rounded bg-gray-100 px-1 dark:bg-gray-700">due:</kbd> date range</span>
         </div>
       </div>
     </Modal>

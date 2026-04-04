@@ -1,4 +1,4 @@
-import { useMemo } from 'react'
+import { useMemo, useState } from 'react'
 import { STATUS_CONFIG } from '../../types'
 import type { Task, TaskStatus } from '../../types'
 import { TaskCard } from './TaskCard'
@@ -14,6 +14,8 @@ interface Props {
 const STATUS_ORDER: TaskStatus[] = ['todo', 'in_progress', 'on_hold', 'done']
 
 export function TaskBoard({ tasks, projectId, onSelectTask, onStatusChange }: Props) {
+  const [dragOverColumn, setDragOverColumn] = useState<TaskStatus | null>(null)
+  const [draggingTaskId, setDraggingTaskId] = useState<string | null>(null)
   const rootTasks = useMemo(() => tasks.filter((t) => !t.parent_id), [tasks])
 
   const columns = useMemo(() => {
@@ -24,18 +26,34 @@ export function TaskBoard({ tasks, projectId, onSelectTask, onStatusChange }: Pr
 
   const handleDrop = (e: React.DragEvent, status: TaskStatus) => {
     e.preventDefault()
+    setDragOverColumn(null)
+    setDraggingTaskId(null)
     const taskId = e.dataTransfer.getData('taskId')
     if (taskId && onStatusChange) onStatusChange(taskId, status)
   }
 
-  const handleDragOver = (e: React.DragEvent) => {
+  const handleDragOver = (e: React.DragEvent, status: TaskStatus) => {
     e.preventDefault()
     e.dataTransfer.dropEffect = 'move'
+    setDragOverColumn(status)
+  }
+
+  const handleDragLeave = (e: React.DragEvent) => {
+    // Only clear if leaving the column entirely (not entering a child)
+    if (!e.currentTarget.contains(e.relatedTarget as Node)) {
+      setDragOverColumn(null)
+    }
   }
 
   const handleDragStart = (e: React.DragEvent, taskId: string) => {
     e.dataTransfer.setData('taskId', taskId)
     e.dataTransfer.effectAllowed = 'move'
+    setDraggingTaskId(taskId)
+  }
+
+  const handleDragEnd = () => {
+    setDraggingTaskId(null)
+    setDragOverColumn(null)
   }
 
   return (
@@ -47,9 +65,14 @@ export function TaskBoard({ tasks, projectId, onSelectTask, onStatusChange }: Pr
         return (
           <div
             key={status}
-            className="flex w-full sm:w-72 shrink-0 flex-col rounded-lg bg-gray-50 dark:bg-gray-800/50"
+            className={`flex w-full sm:w-72 shrink-0 flex-col rounded-lg transition-colors duration-200 ${
+              dragOverColumn === status
+                ? 'bg-primary-50/50 dark:bg-primary-900/10 border border-primary-300 dark:border-primary-700'
+                : 'bg-gray-50 dark:bg-gray-800/50'
+            }`}
             onDrop={(e) => handleDrop(e, status)}
-            onDragOver={handleDragOver}
+            onDragOver={(e) => handleDragOver(e, status)}
+            onDragLeave={handleDragLeave}
           >
             {/* Column header */}
             <div className="flex items-center gap-2 px-3 py-3">
@@ -66,8 +89,10 @@ export function TaskBoard({ tasks, projectId, onSelectTask, onStatusChange }: Pr
                   key={task.id}
                   draggable
                   onDragStart={(e) => handleDragStart(e, task.id)}
+                  onDragEnd={handleDragEnd}
+                  className={draggingTaskId === task.id ? 'ring-2 ring-primary-500 ring-offset-2 rounded-lg' : ''}
                 >
-                  <TaskCard task={task} onSelect={onSelectTask} />
+                  <TaskCard task={task} onSelect={onSelectTask} isDragging={draggingTaskId === task.id} />
                 </div>
               ))}
             </div>

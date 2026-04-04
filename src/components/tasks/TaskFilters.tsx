@@ -1,8 +1,10 @@
 import { Search, X } from 'lucide-react'
+import { HelpTooltip } from '../ui/HelpTooltip'
 import { useTaskStore } from '../../store/taskStore'
 import type { TaskSort } from '../../store/taskStore'
-import { STATUS_CONFIG, PRIORITY_CONFIG } from '../../types'
-import type { TaskStatus, TaskPriority } from '../../types'
+import { STATUS_CONFIG, PRIORITY_CONFIG, TASK_TYPE_CONFIG } from '../../types'
+import type { TaskStatus, TaskPriority, TaskType } from '../../types'
+import { FilterPills } from './FilterPills'
 
 const SORT_OPTIONS: { value: TaskSort; label: string }[] = [
   { value: 'position', label: 'Manual order' },
@@ -21,12 +23,30 @@ interface Props {
 export function TaskFilters({ showResponsibility, showAssignee, assigneeOptions }: Props) {
   const { filters, setFilters } = useTaskStore()
 
-  const hasFilters = filters.status || filters.priority || filters.assignee_id || filters.search || (filters.responsibility && filters.responsibility !== 'all')
+  const hasFilters = filters.status || filters.priority || filters.task_type || filters.assignee_id || filters.search || (filters.responsibility && filters.responsibility !== 'all')
 
   const clearFilters = () => setFilters({})
 
+  const handleRemoveFilter = (key: string) => {
+    const updated = { ...filters }
+    delete (updated as Record<string, unknown>)[key]
+    setFilters(updated)
+  }
+
+  const pillFilters: Record<string, string | undefined> = {
+    status: filters.status,
+    priority: filters.priority !== undefined ? String(filters.priority) : undefined,
+    task_type: filters.task_type,
+    assignee_id: filters.assignee_id,
+    search: filters.search,
+    responsibility: filters.responsibility,
+    sort: filters.sort,
+  }
+
   return (
+    <div className="space-y-2" data-tour="filter-bar">
     <div className="flex flex-wrap items-center gap-2">
+      <HelpTooltip text="Use filters to narrow down tasks by status, priority, type, or assignee. Combine multiple filters for precise results." />
       {/* Search */}
       <div className="relative">
         <Search size={14} className="absolute left-2.5 top-1/2 -translate-y-1/2 text-gray-400" />
@@ -62,6 +82,19 @@ export function TaskFilters({ showResponsibility, showAssignee, assigneeOptions 
       >
         <option value="">All Priority</option>
         {Object.entries(PRIORITY_CONFIG).map(([k, v]) => (
+          <option key={k} value={k}>{v.label}</option>
+        ))}
+      </select>
+
+      {/* Type */}
+      <select
+        value={filters.task_type || ''}
+        onChange={(e) => setFilters({ ...filters, task_type: (e.target.value || undefined) as TaskType | undefined })}
+        aria-label="Filter by type"
+        className="rounded-lg border border-gray-200 bg-white px-2 py-1.5 text-xs text-gray-700 focus:border-primary-500 focus:outline-none dark:border-gray-700 dark:bg-gray-800 dark:text-gray-300"
+      >
+        <option value="">All Types</option>
+        {Object.entries(TASK_TYPE_CONFIG).map(([k, v]) => (
           <option key={k} value={k}>{v.label}</option>
         ))}
       </select>
@@ -118,6 +151,8 @@ export function TaskFilters({ showResponsibility, showAssignee, assigneeOptions 
           Clear
         </button>
       )}
+    </div>
+    <FilterPills filters={pillFilters} onRemove={handleRemoveFilter} onClearAll={clearFilters} />
     </div>
   )
 }

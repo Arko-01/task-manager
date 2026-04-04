@@ -8,6 +8,8 @@ import { ProjectPage } from './pages/ProjectPage'
 import { AdminPage } from './pages/AdminPage'
 import { ProfilePage } from './pages/ProfilePage'
 import { TrashPage } from './pages/TrashPage'
+import { HelpPage } from './pages/HelpPage'
+import { StatusPage } from './pages/StatusPage'
 
 export const router = createBrowserRouter([
   {
@@ -44,6 +46,14 @@ export const router = createBrowserRouter([
       {
         path: '/trash',
         element: <TrashPage />,
+      },
+      {
+        path: '/help',
+        element: <HelpPage />,
+      },
+      {
+        path: '/status',
+        element: <StatusPage />,
       },
     ],
   },

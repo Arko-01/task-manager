@@ -1,5 +1,6 @@
 import { useState } from 'react'
 import { Plus, X, ArrowRight } from 'lucide-react'
+import { HelpTooltip } from '../ui/HelpTooltip'
 import { useTaskStore } from '../../store/taskStore'
 import { useToast } from '../ui/Toast'
 import type { TaskDependency } from '../../types'
@@ -37,9 +38,12 @@ export function DependencySelector({ taskId, dependencies }: Props) {
 
   return (
     <div className="space-y-2">
-      <label className="text-xs font-medium uppercase tracking-wider text-gray-500 dark:text-gray-400">
-        Dependencies
-      </label>
+      <div className="flex items-center gap-1.5">
+        <label className="text-xs font-medium uppercase tracking-wider text-gray-500 dark:text-gray-400">
+          Dependencies
+        </label>
+        <HelpTooltip text="Dependencies mark tasks that must be completed before this one can start. Blocked tasks cannot be marked as done until their blockers are finished." />
+      </div>
 
       {dependencies.map((dep) => (
         <div key={dep.id} className="flex items-center gap-2 rounded-lg border border-gray-100 px-2 py-1.5 dark:border-gray-800">

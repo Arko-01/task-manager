@@ -5,6 +5,9 @@ export interface Profile {
   full_name: string | null
   avatar_url: string | null
   timezone: string | null
+  bio: string | null
+  skills: string[]
+  ical_token: string | null
   created_at: string
 }
 
@@ -13,11 +16,13 @@ export interface Team {
   id: string
   name: string
   description: string | null
+  brand_color: string
+  logo_url: string | null
   created_by: string
   created_at: string
 }
 
-export type TeamRole = 'admin' | 'sub_team_manager' | 'member' | 'viewer'
+export type TeamRole = 'admin' | 'sub_team_manager' | 'project_lead' | 'task_lead' | 'member' | 'viewer'
 
 export interface TeamPermissions {
   view_tasks: boolean
@@ -71,6 +76,8 @@ export interface Project {
   is_default: boolean
   start_date: string
   end_date: string
+  custom_statuses: string[]
+  parent_project_id: string | null
   created_by: string
   created_at: string
 }
@@ -80,6 +87,7 @@ export type ProjectStatus = 'not_started' | 'in_progress' | 'on_hold' | 'complet
 // ============ Tasks ============
 export type TaskStatus = 'todo' | 'in_progress' | 'on_hold' | 'done'
 export type TaskPriority = 1 | 2 | 3 | 4 // 1=urgent, 2=high, 3=medium, 4=low
+export type TaskType = 'ad_hoc' | 'project' | 'recurring' | 'system' | 'subtask'
 
 export interface Task {
   id: string
@@ -89,22 +97,27 @@ export interface Task {
   description: string | null
   status: TaskStatus
   priority: TaskPriority
+  task_type: TaskType
   start_date: string
   end_date: string
   position: number
   depth: number
   is_recurring: boolean
   recurrence_pattern: RecurrencePattern | null
+  time_spent_days: number
+  milestone_id: string | null
   created_by: string
   created_at: string
   updated_at: string
   tags: string[]
   deleted_at: string | null
+  archived_at: string | null
   // Joined data
   assignees?: TaskAssignee[]
   sub_tasks?: Task[]
   dependencies?: TaskDependency[]
   project?: Project
+  milestone?: Milestone
 }
 
 export type AssigneeRole = 'primary' | 'secondary'
@@ -113,6 +126,7 @@ export interface TaskAssignee {
   task_id: string
   user_id: string
   role: AssigneeRole
+  notification_level: 'all' | 'mentions' | 'none'
   profile?: Profile
 }
 
@@ -200,8 +214,76 @@ export interface NotificationPreferences {
   quiet_hours_end: string | null
 }
 
+// ============ Milestones ============
+export interface Milestone {
+  id: string
+  project_id: string
+  name: string
+  description: string | null
+  target_date: string | null
+  position: number
+  created_at: string
+}
+
+// ============ Project Templates ============
+export interface ProjectTemplate {
+  id: string
+  team_id: string
+  name: string
+  description: string | null
+  emoji: string
+  custom_statuses: string[]
+  task_templates: Array<{ title: string; status: string; priority: number; description?: string }>
+  created_by: string
+  created_at: string
+}
+
+// ============ Project Dependencies ============
+export interface ProjectDependency {
+  id: string
+  project_id: string
+  depends_on_project_id: string
+  created_at: string
+  depends_on_project?: Project
+}
+
+// ============ Activity Log ============
+export interface ActivityLogEntry {
+  id: string
+  team_id: string
+  user_id: string
+  action: string
+  entity_type: string
+  entity_id: string | null
+  entity_title: string | null
+  metadata: Record<string, unknown>
+  created_at: string
+  profile?: Profile
+}
+
+// ============ Audit Logs ============
+export interface AuditLogEntry {
+  id: string
+  team_id: string
+  user_id: string
+  action: string
+  entity_type: string
+  entity_id: string | null
+  details: Record<string, unknown>
+  created_at: string
+  profile?: Profile
+}
+
+// ============ User Project Pins ============
+export interface UserProjectPin {
+  user_id: string
+  project_id: string
+  is_favorite: boolean
+  last_visited_at: string
+}
+
 // ============ View Types ============
-export type ViewType = 'list' | 'board' | 'calendar' | 'gantt'
+export type ViewType = 'list' | 'board' | 'calendar' | 'gantt' | 'table' | 'reports'
 
 // ============ Priority & Status Helpers ============
 export const PRIORITY_CONFIG = {
@@ -216,6 +298,23 @@ export const STATUS_CONFIG = {
   in_progress: { label: 'In Progress', color: 'blue', badgeClass: 'bg-blue-100 text-blue-700 dark:bg-blue-900 dark:text-blue-300' },
   on_hold: { label: 'On Hold', color: 'amber', badgeClass: 'bg-amber-100 text-amber-700 dark:bg-amber-900 dark:text-amber-300' },
   done: { label: 'Done', color: 'green', badgeClass: 'bg-green-100 text-green-700 dark:bg-green-900 dark:text-green-300' },
+} as const
+
+export const TASK_TYPE_CONFIG = {
+  ad_hoc: { label: 'Ad-Hoc', icon: 'Zap', color: 'red' },
+  project: { label: 'Project', icon: 'FolderKanban', color: 'blue' },
+  recurring: { label: 'Recurring', icon: 'Repeat', color: 'purple' },
+  system: { label: 'System', icon: 'Settings', color: 'gray' },
+  subtask: { label: 'Subtask', icon: 'GitBranch', color: 'teal' },
+} as const
+
+export const ROLE_CONFIG = {
+  admin: { label: 'Admin', description: 'Full access to all features' },
+  sub_team_manager: { label: 'Sub-Team Manager', description: 'Manage sub-team members and tasks' },
+  project_lead: { label: 'Project Lead', description: 'Full access to assigned projects' },
+  task_lead: { label: 'Task Lead', description: 'Manage specific task types' },
+  member: { label: 'Member', description: 'Create and edit own tasks' },
+  viewer: { label: 'Viewer', description: 'Read-only access' },
 } as const
 
 export const DEFAULT_PERMISSIONS: TeamPermissions = {

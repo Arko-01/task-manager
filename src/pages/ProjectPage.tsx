@@ -3,12 +3,16 @@ import { useParams } from 'react-router-dom'
 import { useProjectStore } from '../store/projectStore'
 import { useTaskStore } from '../store/taskStore'
 import { useTeamStore } from '../store/teamStore'
+import { MilestoneList } from '../components/project/MilestoneList'
+import { ProjectDependencies } from '../components/project/ProjectDependencies'
 import { ViewToggle } from '../components/tasks/ViewToggle'
 import { TaskFilters } from '../components/tasks/TaskFilters'
 import { TaskList } from '../components/tasks/TaskList'
 import { TaskBoard } from '../components/tasks/TaskBoard'
 import { TaskCalendar } from '../components/tasks/TaskCalendar'
 import { TaskGantt } from '../components/tasks/TaskGantt'
+import { TaskTable } from '../components/tasks/TaskTable'
+import { ReportsView } from '../components/reports/ReportsView'
 import { TaskDetail } from '../components/tasks/TaskDetail'
 import { BulkActions } from '../components/tasks/BulkActions'
 import { TaskTemplates } from '../components/tasks/TaskTemplates'
@@ -17,6 +21,10 @@ import { Badge } from '../components/ui/Badge'
 import { QuickAddTask } from '../components/tasks/QuickAddTask'
 import { TaskListSkeleton, TaskBoardSkeleton } from '../components/ui/Skeleton'
 import { useToast } from '../components/ui/Toast'
+import { usePermissions } from '../hooks/usePermissions'
+import { ExportCSV } from '../components/export/ExportCSV'
+import { ExportPDF } from '../components/export/ExportPDF'
+import { CalendarExport } from '../components/export/CalendarExport'
 import type { ViewType, Task, TaskStatus, ProjectStatus } from '../types'
 
 const PROJECT_STATUS_CONFIG: Record<ProjectStatus, { label: string; class: string }> = {
@@ -29,7 +37,7 @@ const PROJECT_STATUS_CONFIG: Record<ProjectStatus, { label: string; class: strin
 
 export function ProjectPage() {
   const { projectId } = useParams<{ projectId: string }>()
-  const { projects, getProjectStatus } = useProjectStore()
+  const { projects, getProjectStatus, milestones, fetchMilestones } = useProjectStore()
   const { tasks, loading, fetchTasks, updateTask, createTask, setCurrentTask, currentTask, filters } = useTaskStore()
   const { members } = useTeamStore()
   const [view, setView] = useState<ViewType>('list')
@@ -42,6 +50,8 @@ export function ProjectPage() {
   })
 
   const { showToast } = useToast()
+  const { can } = usePermissions()
+  const canManageProjects = can('manage_projects')
 
   const project = projects.find((p) => p.id === projectId)
 
@@ -49,8 +59,9 @@ export function ProjectPage() {
     if (projectId) {
       fetchTasks(projectId)
       getProjectStatus(projectId).then(setProjectStatus)
+      fetchMilestones(projectId)
     }
-  }, [projectId, fetchTasks, getProjectStatus, filters])
+  }, [projectId, fetchTasks, getProjectStatus, fetchMilestones, filters])
 
   useEffect(() => {
     const handler = (e: Event) => setView((e as CustomEvent).detail)
@@ -109,6 +120,21 @@ export function ProjectPage() {
             {project.start_date} — {project.end_date}
           </span>
         </div>
+
+        {/* Milestones */}
+        <div className="mt-4">
+          <MilestoneList
+            projectId={project.id}
+            milestones={milestones}
+            tasks={tasks}
+            canEdit={canManageProjects}
+          />
+        </div>
+
+        {/* Project Dependencies */}
+        <div className="mt-4">
+          <ProjectDependencies projectId={project.id} allProjects={projects} />
+        </div>
       </div>
 
       {/* Controls */}
@@ -116,6 +142,11 @@ export function ProjectPage() {
         <div className="flex items-center gap-2">
           <ViewToggle current={view} onChange={setView} />
           {projectId && <TaskTemplates projectId={projectId} onCreated={() => fetchTasks(projectId)} />}
+          <div className="flex items-center gap-1 ml-2 border-l border-gray-200 dark:border-gray-700 pl-2">
+            <ExportCSV tasks={tasks} filename={project.name} />
+            <ExportPDF tasks={tasks} projectName={project.name} progress={projectStatus.progress} />
+            <CalendarExport tasks={tasks} />
+          </div>
         </div>
         <TaskFilters showAssignee assigneeOptions={assigneeOptions} />
       </div>
@@ -174,6 +205,10 @@ export function ProjectPage() {
             </>
           )}
           {view === 'gantt' && <TaskGantt tasks={tasks} onSelectTask={handleSelectTask} />}
+          {view === 'table' && (
+            <TaskTable tasks={tasks.filter((t) => !t.parent_id)} onSelect={handleSelectTask} onStatusChange={handleStatusChange} />
+          )}
+          {view === 'reports' && <ReportsView tasks={tasks} />}
 
           {/* Empty state */}
           {!tasks.length && (

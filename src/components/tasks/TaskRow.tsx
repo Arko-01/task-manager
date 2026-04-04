@@ -1,9 +1,12 @@
-import { useState } from 'react'
-import { ChevronRight, GripVertical, Calendar, User2 } from 'lucide-react'
+import { useState, useRef } from 'react'
+import { ChevronRight, GripVertical, Calendar, User2, Clock } from 'lucide-react'
 import { PRIORITY_CONFIG, STATUS_CONFIG } from '../../types'
 import type { Task } from '../../types'
 import { Badge } from '../ui/Badge'
 import { Avatar } from '../ui/Avatar'
+import { TaskTypeIcon } from './TaskTypeIcon'
+import { RecurrenceBadge } from './RecurrenceBadge'
+import { TaskHoverPreview } from './TaskHoverPreview'
 
 interface Props {
   task: Task
@@ -16,6 +19,7 @@ interface Props {
 
 export function TaskRow({ task, onSelect, onStatusChange, level = 0, selected, onToggleSelect }: Props) {
   const [expanded, setExpanded] = useState(true)
+  const statusBtnRef = useRef<HTMLButtonElement>(null)
   const hasSubTasks = task.sub_tasks && task.sub_tasks.length > 0
   const priority = PRIORITY_CONFIG[task.priority]
   const status = STATUS_CONFIG[task.status]
@@ -43,8 +47,8 @@ export function TaskRow({ task, onSelect, onStatusChange, level = 0, selected, o
           />
         )}
 
-        {/* Drag handle */}
-        <GripVertical size={14} className="text-gray-300 opacity-0 group-hover:opacity-100 cursor-grab shrink-0" />
+        {/* Drag handle (hidden on mobile) */}
+        <GripVertical size={14} className="hidden text-gray-300 opacity-0 group-hover:opacity-100 cursor-grab shrink-0 sm:block" />
 
         {/* Expand toggle for sub-tasks */}
         <button
@@ -58,53 +62,67 @@ export function TaskRow({ task, onSelect, onStatusChange, level = 0, selected, o
         {/* Priority dot */}
         <span className={`h-2 w-2 rounded-full shrink-0 ${priority.dotClass}`} title={priority.label} />
 
+        {/* Task type icon */}
+        <TaskTypeIcon type={task.task_type} size={12} />
+
         {/* Status checkbox circle */}
         <button
+          ref={statusBtnRef}
           onClick={(e) => {
             e.stopPropagation()
+            const btn = statusBtnRef.current
+            if (btn) {
+              btn.classList.add('scale-110')
+              setTimeout(() => btn.classList.remove('scale-110'), 200)
+            }
             const nextStatus = task.status === 'done' ? 'todo' : 'done'
             onStatusChange?.(task.id, nextStatus)
           }}
           aria-label={task.status === 'done' ? `Mark "${task.title}" as todo` : `Mark "${task.title}" as done`}
-          className={`flex h-4 w-4 shrink-0 items-center justify-center rounded-full border-2 transition-colors ${
+          className={`flex h-4 w-4 shrink-0 items-center justify-center rounded-full border-2 transition-all duration-200 ${
             task.status === 'done'
               ? 'border-green-500 bg-green-500 text-white'
               : 'border-gray-300 hover:border-green-400 dark:border-gray-600'
           }`}
         >
           {task.status === 'done' && (
-            <svg className="h-2.5 w-2.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={3}>
+            <svg className="h-2.5 w-2.5 transition-opacity duration-200" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={3}>
               <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
             </svg>
           )}
         </button>
 
         {/* Title + Tags */}
-        <div onClick={() => onSelect(task)} className="flex-1 min-w-0 flex items-center gap-1.5 cursor-pointer">
-          <span className={`truncate text-sm ${
-            task.status === 'done'
-              ? 'text-gray-400 line-through dark:text-gray-500'
-              : 'text-gray-900 dark:text-gray-100'
-          }`}>
-            {task.title}
-          </span>
-          {task.tags?.slice(0, 2).map((tag) => (
-            <span key={tag} className="shrink-0 rounded-full bg-primary-50 px-1.5 py-0 text-[10px] font-medium text-primary-600 dark:bg-primary-900/30 dark:text-primary-400">
-              {tag}
+        <TaskHoverPreview task={task}>
+          <div onClick={() => onSelect(task)} className="flex-1 min-w-0 flex items-center gap-1.5 cursor-pointer">
+            <span className={`truncate text-sm ${
+              task.status === 'done'
+                ? 'text-gray-400 line-through dark:text-gray-500'
+                : 'text-gray-900 dark:text-gray-100'
+            }`}>
+              {task.title}
             </span>
-          ))}
-          {(task.tags?.length || 0) > 2 && (
-            <span className="shrink-0 text-[10px] text-gray-400">+{(task.tags?.length || 0) - 2}</span>
-          )}
-        </div>
+            {task.tags?.slice(0, 2).map((tag) => (
+              <span key={tag} className="shrink-0 rounded-full bg-primary-50 px-1.5 py-0 text-[10px] font-medium text-primary-600 dark:bg-primary-900/30 dark:text-primary-400">
+                {tag}
+              </span>
+            ))}
+            {(task.tags?.length || 0) > 2 && (
+              <span className="shrink-0 text-[10px] text-gray-400">+{(task.tags?.length || 0) - 2}</span>
+            )}
+          </div>
+        </TaskHoverPreview>
 
-        {/* Status badge */}
-        <Badge className={`${status.badgeClass} shrink-0`}>
+        {/* Recurrence badge */}
+        <RecurrenceBadge isRecurring={task.is_recurring} pattern={task.recurrence_pattern} />
+
+        {/* Status badge (hidden on mobile) */}
+        <Badge className={`${status.badgeClass} hidden shrink-0 sm:inline-flex`}>
           {status.label}
         </Badge>
 
-        {/* Assignees */}
-        <div className="flex -space-x-1 shrink-0">
+        {/* Assignees (hidden on mobile) */}
+        <div className="hidden -space-x-1 shrink-0 sm:flex">
           {task.assignees?.slice(0, 3).map((a) => (
             <Avatar key={a.user_id} name={a.profile?.full_name} url={a.profile?.avatar_url} size="sm" />
           ))}
@@ -121,6 +139,14 @@ export function TaskRow({ task, onSelect, onStatusChange, level = 0, selected, o
           <Calendar size={12} />
           {formatDate(task.end_date)}
         </div>
+
+        {/* Time spent */}
+        {task.time_spent_days > 0 && (
+          <span className="flex items-center gap-1 shrink-0 text-xs text-gray-400 dark:text-gray-500">
+            <Clock size={12} />
+            {task.time_spent_days}d
+          </span>
+        )}
 
         {/* Sub-task count */}
         {hasSubTasks && (

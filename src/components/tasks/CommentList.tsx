@@ -1,8 +1,11 @@
-import { useEffect, useState, useRef } from 'react'
-import { Send, Trash2 } from 'lucide-react'
+import { useEffect, useState, useRef, useCallback } from 'react'
+import { Send, Trash2, MessageCircle } from 'lucide-react'
+import ReactMarkdown from 'react-markdown'
+import remarkGfm from 'remark-gfm'
 import { useTaskStore } from '../../store/taskStore'
 import { useAuthStore } from '../../store/authStore'
 import { useTeamStore } from '../../store/teamStore'
+import { useChatStore } from '../../store/chatStore'
 import { Avatar } from '../ui/Avatar'
 import { useToast } from '../ui/Toast'
 
@@ -17,9 +20,10 @@ export function CommentList({ taskId }: Props) {
   const [content, setContent] = useState('')
   const [loading, setLoading] = useState(false)
   const { members } = useTeamStore()
+  const { createThreadFromComment } = useChatStore()
   const [showMentions, setShowMentions] = useState(false)
   const [mentionFilter, setMentionFilter] = useState('')
-  const inputRef = useRef<HTMLInputElement>(null)
+  const inputRef = useRef<HTMLTextAreaElement>(null)
 
   useEffect(() => {
     fetchComments(taskId)
@@ -35,9 +39,16 @@ export function CommentList({ taskId }: Props) {
     else setContent('')
   }
 
-  const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+  const autoResize = useCallback((el: HTMLTextAreaElement | null) => {
+    if (!el) return
+    el.style.height = 'auto'
+    el.style.height = `${Math.min(el.scrollHeight, 120)}px`
+  }, [])
+
+  const handleInputChange = (e: React.ChangeEvent<HTMLTextAreaElement>) => {
     const val = e.target.value
     setContent(val)
+    autoResize(e.target)
     // Check for @ trigger
     const lastAt = val.lastIndexOf('@')
     if (lastAt >= 0 && (lastAt === 0 || val[lastAt - 1] === ' ')) {
@@ -49,6 +60,15 @@ export function CommentList({ taskId }: Props) {
       }
     }
     setShowMentions(false)
+  }
+
+  const handleKeyDown = (e: React.KeyboardEvent<HTMLTextAreaElement>) => {
+    if (e.key === 'Enter' && !e.shiftKey) {
+      e.preventDefault()
+      if (content.trim()) {
+        handleSubmit(e as unknown as React.FormEvent)
+      }
+    }
   }
 
   const insertMention = (name: string) => {
@@ -67,6 +87,13 @@ export function CommentList({ taskId }: Props) {
   const handleDelete = async (commentId: string) => {
     const { error } = await deleteComment(commentId)
     if (error) showToast(error, 'error')
+  }
+
+  const handleStartThread = async (commentContent: string) => {
+    const assigneeIds = members.map((m) => m.user_id)
+    const { error } = await createThreadFromComment(taskId, commentContent, assigneeIds)
+    if (error) showToast(error, 'error')
+    else showToast('Thread created from comment', 'success')
   }
 
   const formatTime = (d: string) => {
@@ -98,6 +125,14 @@ export function CommentList({ taskId }: Props) {
                   {c.profile?.full_name || 'User'}
                 </span>
                 <span className="text-xs text-gray-400 dark:text-gray-500">{formatTime(c.created_at)}</span>
+                <button
+                  onClick={() => handleStartThread(c.content)}
+                  className="text-gray-300 hover:text-primary-500 dark:text-gray-600 dark:hover:text-primary-400"
+                  title="Start thread"
+                  aria-label="Start thread from comment"
+                >
+                  <MessageCircle size={10} />
+                </button>
                 {c.user_id === profile?.id && (
                   <button
                     onClick={() => handleDelete(c.id)}
@@ -107,15 +142,28 @@ export function CommentList({ taskId }: Props) {
                   </button>
                 )}
               </div>
-              <p className="text-sm text-gray-600 dark:text-gray-400 whitespace-pre-wrap">
-                {c.content.split(/(@\w[\w\s]*?)(?=\s|$)/g).map((part, i) =>
-                  part.startsWith('@') ? (
-                    <span key={i} className="font-medium text-primary-600 dark:text-primary-400">{part}</span>
-                  ) : (
-                    <span key={i}>{part}</span>
-                  )
-                )}
-              </p>
+              <div className="text-sm text-gray-600 dark:text-gray-400 prose prose-sm dark:prose-invert max-w-none">
+              <ReactMarkdown
+                remarkPlugins={[remarkGfm]}
+                components={{
+                  p: ({ children }) => (
+                    <p>
+                      {typeof children === 'string'
+                        ? children.split(/(@\w[\w\s]*?)(?=\s|$)/g).map((part, i) =>
+                            part.startsWith('@') ? (
+                              <span key={i} className="font-medium text-primary-600 dark:text-primary-400">{part}</span>
+                            ) : (
+                              <span key={i}>{part}</span>
+                            )
+                          )
+                        : children}
+                    </p>
+                  ),
+                }}
+              >
+                {c.content}
+              </ReactMarkdown>
+              </div>
             </div>
           </div>
         ))}
@@ -126,14 +174,15 @@ export function CommentList({ taskId }: Props) {
 
       {/* Input */}
       <form onSubmit={handleSubmit} className="relative">
-        <div className="flex items-center gap-2">
-          <input
+        <div className="flex items-start gap-2">
+          <textarea
             ref={inputRef}
-            type="text"
+            rows={1}
             value={content}
             onChange={handleInputChange}
-            placeholder="Write a comment... (@ to mention)"
-            className="flex-1 rounded-lg border border-gray-200 bg-white px-3 py-1.5 text-sm text-gray-900 placeholder:text-gray-400 focus:border-primary-500 focus:outline-none dark:border-gray-700 dark:bg-gray-800 dark:text-gray-100 dark:placeholder:text-gray-500"
+            onKeyDown={handleKeyDown}
+            placeholder="Write a comment... (@ to mention, Shift+Enter for newline)"
+            className="flex-1 resize-none rounded-lg border border-gray-200 bg-white px-3 py-1.5 text-sm text-gray-900 placeholder:text-gray-400 focus:border-primary-500 focus:outline-none dark:border-gray-700 dark:bg-gray-800 dark:text-gray-100 dark:placeholder:text-gray-500"
             disabled={loading}
             onBlur={() => setTimeout(() => setShowMentions(false), 150)}
           />

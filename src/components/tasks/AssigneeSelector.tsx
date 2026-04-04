@@ -1,5 +1,6 @@
 import { useState } from 'react'
 import { Plus, X } from 'lucide-react'
+import { HelpTooltip } from '../ui/HelpTooltip'
 import { useTeamStore } from '../../store/teamStore'
 import { useTaskStore } from '../../store/taskStore'
 import { Avatar } from '../ui/Avatar'
@@ -41,9 +42,12 @@ export function AssigneeSelector({ taskId, assignees, readOnly }: Props) {
   return (
     <div className="space-y-2">
       <div className="flex items-center justify-between">
-        <label className="text-xs font-medium uppercase tracking-wider text-gray-500 dark:text-gray-400">
-          Assignees
-        </label>
+        <div className="flex items-center gap-1.5">
+          <label className="text-xs font-medium uppercase tracking-wider text-gray-500 dark:text-gray-400">
+            Assignees
+          </label>
+          <HelpTooltip text="Primary (P) is the main task owner. Secondary (S) provides support. Click the P/S badge to toggle roles." />
+        </div>
         {!readOnly && (
           <button
             onClick={() => setShowPicker(!showPicker)}

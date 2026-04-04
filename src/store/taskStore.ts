@@ -1,12 +1,13 @@
 import { create } from 'zustand'
 import { supabase } from '../lib/supabase'
-import type { Task, TaskStatus, TaskPriority, TaskAssignee, Comment } from '../types'
+import type { Task, TaskStatus, TaskPriority, TaskType, TaskAssignee, Comment } from '../types'
 
 export type TaskSort = 'position' | 'end_date' | 'priority' | 'title' | 'created_at'
 
 interface TaskFilters {
   status?: TaskStatus
   priority?: TaskPriority
+  task_type?: TaskType
   assignee_id?: string
   search?: string
   responsibility?: 'primary' | 'secondary' | 'all'
@@ -39,6 +40,10 @@ interface TaskState {
   fetchComments: (taskId: string) => Promise<void>
   addComment: (taskId: string, content: string) => Promise<{ error: string | null }>
   deleteComment: (commentId: string) => Promise<{ error: string | null }>
+  logTime: (taskId: string, days: number) => Promise<{ error: string | null }>
+  archiveTask: (taskId: string) => Promise<{ error: string | null }>
+  fetchArchivedTasks: (projectId: string) => Promise<{ error: string | null; data: Task[] | null }>
+  findSimilarTasks: (title: string, projectId: string) => Task[]
   setFilters: (filters: TaskFilters) => void
   setCurrentTask: (task: Task | null) => void
 }
@@ -78,10 +83,12 @@ export const useTaskStore = create<TaskState>((set, get) => ({
       .select('*, project:projects(id, name, emoji, team_id, start_date, end_date)')
       .eq('project_id', projectId)
       .is('deleted_at', null)
+      .is('archived_at', null)
       .order(sortCol, { ascending })
 
     if (filters.status) query = query.eq('status', filters.status)
     if (filters.priority) query = query.eq('priority', filters.priority)
+    if (filters.task_type) query = query.eq('task_type', filters.task_type)
     if (filters.search) query = query.ilike('title', `%${filters.search}%`)
 
     const { data } = await query
@@ -124,10 +131,12 @@ export const useTaskStore = create<TaskState>((set, get) => ({
       .select('*, project:projects(id, name, emoji, team_id, start_date, end_date)')
       .in('id', taskIds)
       .is('deleted_at', null)
+      .is('archived_at', null)
       .order(sortCol, { ascending })
 
     if (filters.status) query = query.eq('status', filters.status)
     if (filters.priority) query = query.eq('priority', filters.priority)
+    if (filters.task_type) query = query.eq('task_type', filters.task_type)
     if (filters.search) query = query.ilike('title', `%${filters.search}%`)
 
     const { data } = await query
@@ -154,9 +163,11 @@ export const useTaskStore = create<TaskState>((set, get) => ({
       .select('*, project:projects(id, name, emoji, team_id, start_date, end_date)')
       .in('project_id', projectIds)
       .is('deleted_at', null)
+      .is('archived_at', null)
       .order(sortCol, { ascending })
     if (filters.status) query = query.eq('status', filters.status)
     if (filters.priority) query = query.eq('priority', filters.priority)
+    if (filters.task_type) query = query.eq('task_type', filters.task_type)
     if (filters.search) query = query.ilike('title', `%${filters.search}%`)
 
     const { data } = await query
@@ -198,6 +209,7 @@ export const useTaskStore = create<TaskState>((set, get) => ({
         priority: data.priority || 3,
         start_date: data.start_date,
         end_date: data.end_date,
+        task_type: 'ad_hoc',
         position,
         depth,
         created_by: user.id,
@@ -416,6 +428,36 @@ export const useTaskStore = create<TaskState>((set, get) => ({
     const { error } = await supabase.from('comments').delete().eq('id', commentId)
     if (!error) set((s) => ({ comments: s.comments.filter((c) => c.id !== commentId) }))
     return { error: error?.message ?? null }
+  },
+
+  logTime: async (taskId, days) => {
+    const task = get().tasks.find(t => t.id === taskId)
+    if (!task) return { error: 'Task not found' }
+    const newTime = (task.time_spent_days || 0) + days
+    return get().updateTask(taskId, { time_spent_days: newTime })
+  },
+
+  archiveTask: async (taskId) => {
+    const { error } = await supabase.from('tasks').update({ archived_at: new Date().toISOString() }).eq('id', taskId)
+    if (error) return { error: error.message }
+    set(state => ({ tasks: state.tasks.filter(t => t.id !== taskId) }))
+    return { error: null }
+  },
+
+  fetchArchivedTasks: async (projectId) => {
+    const { data, error } = await supabase.from('tasks').select('*').eq('project_id', projectId).not('archived_at', 'is', null).order('archived_at', { ascending: false })
+    if (error) return { error: error.message, data: null }
+    return { error: null, data: data as Task[] }
+  },
+
+  findSimilarTasks: (title, projectId) => {
+    const normalized = title.toLowerCase().trim()
+    if (normalized.length < 3) return []
+    return get().tasks.filter(t =>
+      t.project_id === projectId &&
+      t.deleted_at === null &&
+      t.title.toLowerCase().includes(normalized)
+    ).slice(0, 3)
   },
 
   setFilters: (filters) => {

@@ -5,11 +5,12 @@ interface Toast {
   id: string
   message: string
   type: 'success' | 'error' | 'info'
+  onUndo?: () => void
 }
 
 interface ToastContextValue {
-  toast: (message: string, type?: Toast['type']) => void
-  showToast: (message: string, type?: Toast['type']) => void
+  toast: (message: string, type?: Toast['type'], onUndo?: () => void) => void
+  showToast: (message: string, type?: Toast['type'], onUndo?: () => void) => void
 }
 
 const ToastContext = createContext<ToastContextValue>({ toast: () => {}, showToast: () => {} })
@@ -21,9 +22,9 @@ export function useToast() {
 export function ToastProvider({ children }: { children: ReactNode }) {
   const [toasts, setToasts] = useState<Toast[]>([])
 
-  const toast = useCallback((message: string, type: Toast['type'] = 'info') => {
+  const toast = useCallback((message: string, type: Toast['type'] = 'info', onUndo?: () => void) => {
     const id = crypto.randomUUID()
-    setToasts((prev) => [...prev, { id, message, type }])
+    setToasts((prev) => [...prev, { id, message, type, onUndo }])
   }, [])
 
   const dismiss = useCallback((id: string) => {
@@ -33,8 +34,8 @@ export function ToastProvider({ children }: { children: ReactNode }) {
   return (
     <ToastContext.Provider value={{ toast, showToast: toast }}>
       {children}
-      <div className="fixed bottom-4 right-4 z-50 space-y-2">
-        {toasts.map((t) => (
+      <div className="fixed bottom-4 right-4 z-50 flex flex-col-reverse gap-2">
+        {toasts.slice(-3).reverse().map((t) => (
           <ToastItem key={t.id} toast={t} onDismiss={dismiss} />
         ))}
       </div>
@@ -55,8 +56,16 @@ function ToastItem({ toast, onDismiss }: { toast: Toast; onDismiss: (id: string)
   }
 
   return (
-    <div role="alert" className={`flex items-center gap-2 rounded-lg border px-4 py-3 text-sm shadow-sm animate-in slide-in-from-right ${colors[toast.type]}`}>
+    <div role="alert" className={`flex items-center gap-2 rounded-lg border px-4 py-3 text-sm shadow-sm transition-all duration-300 animate-in slide-in-from-right ${colors[toast.type]}`}>
       <span>{toast.message}</span>
+      {toast.onUndo && (
+        <button
+          onClick={() => { toast.onUndo?.(); onDismiss(toast.id) }}
+          className="ml-1 text-xs font-medium underline underline-offset-2 opacity-80 hover:opacity-100"
+        >
+          Undo
+        </button>
+      )}
       <button onClick={() => onDismiss(toast.id)} className="ml-2 opacity-60 hover:opacity-100">
         <X size={14} />
       </button>

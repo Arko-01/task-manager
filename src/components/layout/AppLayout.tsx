@@ -7,13 +7,17 @@ import { BottomNav } from './BottomNav'
 import { ChatPanel } from '../chat/ChatPanel'
 import { GlobalSearch } from '../search/GlobalSearch'
 import { KeyboardShortcutsHelp } from '../ui/KeyboardShortcutsHelp'
+import { InteractiveTour } from '../onboarding/InteractiveTour'
 import { useKeyboardShortcuts } from '../../hooks/useKeyboardShortcuts'
+import { useNProgress } from '../../hooks/useNProgress'
 import { useTaskStore } from '../../store/taskStore'
 
 export function AppLayout() {
+  useNProgress()
   useKeyboardShortcuts()
   const [mobileSidebarOpen, setMobileSidebarOpen] = useState(false)
   const [chatOpen, setChatOpen] = useState(false)
+  const [showTour, setShowTour] = useState(() => localStorage.getItem('tour-completed') !== 'true')
 
   // Close chat when task detail opens
   useEffect(() => {
@@ -38,6 +42,13 @@ export function AppLayout() {
     window.addEventListener('toggle-chat', handler)
     return () => window.removeEventListener('toggle-chat', handler)
   }, [handleToggleChat])
+
+  // Listen for start-tour events
+  useEffect(() => {
+    const handler = () => setShowTour(true)
+    window.addEventListener('start-tour', handler)
+    return () => window.removeEventListener('start-tour', handler)
+  }, [])
 
   return (
     <div className="flex h-screen bg-gray-50 dark:bg-gray-950">
@@ -77,6 +88,11 @@ export function AppLayout() {
       {/* Global Modals */}
       <GlobalSearch />
       <KeyboardShortcutsHelp />
+
+      {/* Interactive Tour */}
+      {showTour && (
+        <InteractiveTour steps={[]} onComplete={() => setShowTour(false)} />
+      )}
     </div>
   )
 }

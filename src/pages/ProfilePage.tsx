@@ -19,6 +19,9 @@ export function ProfilePage() {
   const { showToast } = useToast()
   const { theme, setTheme } = useTheme()
   const [name, setName] = useState(profile?.full_name || '')
+  const [bio, setBio] = useState(profile?.bio || '')
+  const [skills, setSkills] = useState<string[]>(profile?.skills || [])
+  const [skillInput, setSkillInput] = useState('')
   const [loading, setLoading] = useState(false)
   const [notifPrefs, setNotifPrefs] = useState<NotificationPreferences | null>(null)
 
@@ -53,10 +56,31 @@ export function ProfilePage() {
     saveNotifPrefs(updated)
   }
 
+  const addSkill = (value: string) => {
+    const trimmed = value.trim().toLowerCase()
+    if (trimmed && !skills.includes(trimmed)) {
+      setSkills([...skills, trimmed])
+    }
+    setSkillInput('')
+  }
+
+  const removeSkill = (skill: string) => {
+    setSkills(skills.filter((s) => s !== skill))
+  }
+
+  const handleSkillKeyDown = (e: React.KeyboardEvent) => {
+    if (e.key === 'Enter' || e.key === ',') {
+      e.preventDefault()
+      if (skillInput.trim()) addSkill(skillInput)
+    } else if (e.key === 'Backspace' && !skillInput && skills.length) {
+      removeSkill(skills[skills.length - 1])
+    }
+  }
+
   const handleSave = async () => {
     if (!name.trim()) return
     setLoading(true)
-    const { error } = await updateProfile({ full_name: name.trim() })
+    const { error } = await updateProfile({ full_name: name.trim(), bio: bio.trim() || null, skills })
     setLoading(false)
     if (error) showToast(error, 'error')
     else showToast('Profile updated', 'success')
@@ -82,6 +106,51 @@ export function ProfilePage() {
           value={name}
           onChange={(e) => setName(e.target.value)}
         />
+
+        {/* Bio */}
+        <div className="space-y-1">
+          <label htmlFor="profile-bio" className="block text-sm font-medium text-gray-700 dark:text-gray-300">Bio</label>
+          <textarea
+            id="profile-bio"
+            value={bio}
+            onChange={(e) => setBio(e.target.value)}
+            rows={3}
+            placeholder="Tell your team about yourself..."
+            className="w-full rounded-lg border border-gray-200 bg-white px-3 py-2 text-sm text-gray-900 placeholder:text-gray-400 focus:border-primary-500 focus:outline-none focus:ring-1 focus:ring-primary-500 dark:border-gray-700 dark:bg-gray-800 dark:text-gray-100 dark:placeholder:text-gray-500"
+          />
+        </div>
+
+        {/* Skills */}
+        <div className="space-y-1">
+          <label className="block text-sm font-medium text-gray-700 dark:text-gray-300">Skills</label>
+          <div className="flex flex-wrap items-center gap-1 rounded-lg border border-gray-200 bg-white px-2 py-1.5 dark:border-gray-700 dark:bg-gray-800">
+            {skills.map((skill) => (
+              <span key={skill} className="inline-flex items-center gap-0.5 rounded-full bg-primary-50 px-2 py-0.5 text-xs font-medium text-primary-700 dark:bg-primary-900/30 dark:text-primary-300">
+                {skill}
+                <button type="button" onClick={() => removeSkill(skill)} className="text-primary-400 hover:text-primary-600" aria-label={`Remove skill ${skill}`}>
+                  <span className="text-xs leading-none">&times;</span>
+                </button>
+              </span>
+            ))}
+            <input
+              type="text"
+              value={skillInput}
+              onChange={(e) => setSkillInput(e.target.value)}
+              onKeyDown={handleSkillKeyDown}
+              onBlur={() => { if (skillInput.trim()) addSkill(skillInput) }}
+              placeholder={skills.length ? '' : 'Add skills (press Enter)...'}
+              className="flex-1 min-w-[80px] border-0 bg-transparent px-1 py-0.5 text-xs text-gray-900 placeholder:text-gray-400 focus:outline-none dark:text-gray-100 dark:placeholder:text-gray-500"
+            />
+          </div>
+        </div>
+
+        {/* Timezone */}
+        {profile?.timezone && (
+          <div className="space-y-1">
+            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300">Timezone</label>
+            <p className="text-sm text-gray-600 dark:text-gray-400">{profile.timezone}</p>
+          </div>
+        )}
 
         {/* Theme */}
         <div className="space-y-1">

@@ -6,13 +6,18 @@ import { Button } from '../components/ui/Button'
 import { Input } from '../components/ui/Input'
 import { Modal } from '../components/ui/Modal'
 import { useToast } from '../components/ui/Toast'
-import { Shield, Users, FolderTree, Settings, Plus, Trash2, X } from 'lucide-react'
+import { Shield, Users, FolderTree, Settings, Plus, Trash2, X, Layout, ScrollText } from 'lucide-react'
+import { ProjectTemplateList } from '../components/project/ProjectTemplateList'
+import { AppearanceSettings } from '../components/admin/AppearanceSettings'
+import { AuditLogViewer } from '../components/admin/AuditLogViewer'
 import type { TeamRole, TeamPermissions } from '../types'
-import { DEFAULT_PERMISSIONS } from '../types'
+import { DEFAULT_PERMISSIONS, ROLE_CONFIG } from '../types'
 
 const ROLE_PRESETS: Record<TeamRole, TeamPermissions> = {
   admin: { view_tasks: true, create_tasks: true, edit_own_tasks: true, edit_all_tasks: true, delete_tasks: true, manage_projects: true, manage_sub_teams: true, invite_members: true, remove_members: true, manage_roles: true, view_admin_panel: true, full_access: true },
   sub_team_manager: { view_tasks: true, create_tasks: true, edit_own_tasks: true, edit_all_tasks: true, delete_tasks: false, manage_projects: true, manage_sub_teams: true, invite_members: true, remove_members: false, manage_roles: false, view_admin_panel: true, full_access: false },
+  project_lead: { view_tasks: true, create_tasks: true, edit_own_tasks: true, edit_all_tasks: true, delete_tasks: true, manage_projects: true, manage_sub_teams: false, invite_members: false, remove_members: false, manage_roles: false, view_admin_panel: true, full_access: false },
+  task_lead: { view_tasks: true, create_tasks: true, edit_own_tasks: true, edit_all_tasks: true, delete_tasks: false, manage_projects: false, manage_sub_teams: false, invite_members: false, remove_members: false, manage_roles: false, view_admin_panel: false, full_access: false },
   member: { ...DEFAULT_PERMISSIONS },
   viewer: { view_tasks: true, create_tasks: false, edit_own_tasks: false, edit_all_tasks: false, delete_tasks: false, manage_projects: false, manage_sub_teams: false, invite_members: false, remove_members: false, manage_roles: false, view_admin_panel: false, full_access: false },
 }
@@ -28,7 +33,7 @@ export function AdminPage() {
   const { currentTeam, members, subTeams, updateTeam, updateMemberRole, removeMember, createSubTeam, deleteSubTeam, addSubTeamMember, removeSubTeamMember } = useTeamStore()
   const { profile } = useAuthStore()
   const { showToast } = useToast()
-  const [tab, setTab] = useState<'members' | 'subteams' | 'settings'>('members')
+  const [tab, setTab] = useState<'members' | 'subteams' | 'templates' | 'settings' | 'audit'>('members')
   const [editMemberId, setEditMemberId] = useState<string | null>(null)
   const [showNewSubTeam, setShowNewSubTeam] = useState(false)
   const [subTeamName, setSubTeamName] = useState('')
@@ -84,7 +89,9 @@ export function AdminPage() {
   const tabs = [
     { id: 'members' as const, label: 'Members', icon: Users },
     { id: 'subteams' as const, label: 'Sub-Teams', icon: FolderTree },
+    { id: 'templates' as const, label: 'Templates', icon: Layout },
     { id: 'settings' as const, label: 'Settings', icon: Settings },
+    { id: 'audit' as const, label: 'Audit Log', icon: ScrollText },
   ]
 
   return (
@@ -137,16 +144,20 @@ export function AdminPage() {
                     </div>
                   </td>
                   <td className="px-4 py-3">
-                    <select
-                      value={m.role}
-                      onChange={(e) => handleRoleChange(m.id, e.target.value as TeamRole)}
-                      className="rounded border border-gray-200 px-2 py-1 text-xs dark:border-gray-700 dark:bg-gray-800 dark:text-gray-300"
-                    >
-                      <option value="admin">Admin</option>
-                      <option value="sub_team_manager">Sub-Team Manager</option>
-                      <option value="member">Member</option>
-                      <option value="viewer">Viewer</option>
-                    </select>
+                    <div>
+                      <select
+                        value={m.role}
+                        onChange={(e) => handleRoleChange(m.id, e.target.value as TeamRole)}
+                        className="rounded border border-gray-200 px-2 py-1 text-xs dark:border-gray-700 dark:bg-gray-800 dark:text-gray-300"
+                      >
+                        {Object.entries(ROLE_CONFIG).map(([key, config]) => (
+                          <option key={key} value={key}>{config.label}</option>
+                        ))}
+                      </select>
+                      <p className="mt-0.5 text-[10px] text-gray-400 dark:text-gray-500">
+                        {ROLE_CONFIG[m.role].description}
+                      </p>
+                    </div>
                   </td>
                   <td className="px-4 py-3 text-xs text-gray-500">
                     {new Date(m.joined_at).toLocaleDateString()}
@@ -268,20 +279,42 @@ export function AdminPage() {
         </div>
       )}
 
+      {/* Templates tab */}
+      {tab === 'templates' && (
+        <div className="rounded-lg border border-gray-200 bg-white p-6 dark:border-gray-800 dark:bg-gray-900">
+          <ProjectTemplateList teamId={currentTeam.id} />
+        </div>
+      )}
+
       {/* Settings tab */}
       {tab === 'settings' && (
-        <div className="rounded-lg border border-gray-200 bg-white p-6 dark:border-gray-800 dark:bg-gray-900 space-y-4 max-w-md">
-          <Input label="Team Name" value={teamName} onChange={(e) => setTeamName(e.target.value)} />
-          <div className="space-y-1">
-            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300">Description</label>
-            <textarea
-              value={teamDesc}
-              onChange={(e) => setTeamDesc(e.target.value)}
-              rows={3}
-              className="w-full rounded-lg border border-gray-200 bg-white px-3 py-2 text-sm dark:border-gray-700 dark:bg-gray-800 dark:text-gray-100"
-            />
+        <div className="space-y-8">
+          <div className="rounded-lg border border-gray-200 bg-white p-6 dark:border-gray-800 dark:bg-gray-900 space-y-4 max-w-md">
+            <Input label="Team Name" value={teamName} onChange={(e) => setTeamName(e.target.value)} />
+            <div className="space-y-1">
+              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300">Description</label>
+              <textarea
+                value={teamDesc}
+                onChange={(e) => setTeamDesc(e.target.value)}
+                rows={3}
+                className="w-full rounded-lg border border-gray-200 bg-white px-3 py-2 text-sm dark:border-gray-700 dark:bg-gray-800 dark:text-gray-100"
+              />
+            </div>
+            <Button onClick={handleSaveSettings}>Save Changes</Button>
           </div>
-          <Button onClick={handleSaveSettings}>Save Changes</Button>
+
+          <div className="rounded-lg border border-gray-200 bg-white p-6 dark:border-gray-800 dark:bg-gray-900 max-w-lg">
+            <h3 className="text-base font-semibold text-gray-900 dark:text-gray-100 mb-4">Appearance</h3>
+            <AppearanceSettings team={currentTeam} />
+          </div>
+        </div>
+      )}
+
+      {/* Audit Log tab */}
+      {tab === 'audit' && (
+        <div className="rounded-lg border border-gray-200 bg-white p-6 dark:border-gray-800 dark:bg-gray-900">
+          <h3 className="text-base font-semibold text-gray-900 dark:text-gray-100 mb-4">Audit Log</h3>
+          <AuditLogViewer teamId={currentTeam.id} />
         </div>
       )}
     </div>

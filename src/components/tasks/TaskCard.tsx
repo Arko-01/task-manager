@@ -1,7 +1,10 @@
-import { Calendar } from 'lucide-react'
+import { Calendar, Clock } from 'lucide-react'
 import { PRIORITY_CONFIG } from '../../types'
 import type { Task } from '../../types'
 import { Avatar } from '../ui/Avatar'
+import { TaskTypeIcon } from './TaskTypeIcon'
+import { RecurrenceBadge } from './RecurrenceBadge'
+import { TaskHoverPreview } from './TaskHoverPreview'
 
 interface Props {
   task: Task
@@ -27,17 +30,27 @@ export function TaskCard({ task, onSelect, isDragging }: Props) {
       tabIndex={0}
       role="button"
       aria-label={`Task: ${task.title}, priority: ${priority.label}`}
-      className={`cursor-pointer rounded-lg border border-gray-200 bg-white p-3 shadow-sm transition-shadow hover:shadow-md focus:outline-none focus:ring-2 focus:ring-primary-500 dark:border-gray-700 dark:bg-gray-800 ${
+      className={`cursor-pointer rounded-lg border border-gray-200 bg-white p-3 shadow-sm transition-all duration-200 hover:-translate-y-0.5 hover:shadow-md active:scale-[0.98] focus:outline-none focus:ring-2 focus:ring-primary-500 dark:border-gray-700 dark:bg-gray-800 ${
         isDragging ? 'shadow-lg ring-2 ring-primary-500/30' : ''
       }`}
     >
-      {/* Priority + Title */}
-      <div className="flex items-start gap-2">
-        <span className={`mt-1.5 h-2 w-2 rounded-full shrink-0 ${priority.dotClass}`} />
-        <span className={`text-sm font-medium ${task.status === 'done' ? 'text-gray-400 line-through' : 'text-gray-900 dark:text-gray-100'}`}>
-          {task.title}
-        </span>
-      </div>
+      {/* Priority + Type + Title */}
+      <TaskHoverPreview task={task}>
+        <div className="flex items-start gap-2">
+          <span className={`mt-1.5 h-2 w-2 rounded-full shrink-0 ${priority.dotClass}`} />
+          <TaskTypeIcon type={task.task_type} size={12} className="mt-1 shrink-0" />
+          <span className={`text-sm font-medium ${task.status === 'done' ? 'text-gray-400 line-through' : 'text-gray-900 dark:text-gray-100'}`}>
+            {task.title}
+          </span>
+        </div>
+      </TaskHoverPreview>
+
+      {/* Recurrence badge */}
+      {task.is_recurring && task.recurrence_pattern && (
+        <div className="mt-1.5">
+          <RecurrenceBadge isRecurring={task.is_recurring} pattern={task.recurrence_pattern} />
+        </div>
+      )}
 
       {/* Meta row */}
       <div className="mt-2 flex items-center justify-between">
@@ -47,6 +60,14 @@ export function TaskCard({ task, onSelect, isDragging }: Props) {
             <Calendar size={11} />
             {formatDate(task.end_date)}
           </span>
+
+          {/* Time spent */}
+          {task.time_spent_days > 0 && (
+            <span className="flex items-center gap-1 text-xs text-gray-400 dark:text-gray-500">
+              <Clock size={11} />
+              {task.time_spent_days}d
+            </span>
+          )}
 
           {/* Sub-task count */}
           {subTotal > 0 && (
