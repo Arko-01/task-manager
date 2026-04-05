@@ -1,9 +1,10 @@
-import { useMemo, useState } from 'react'
+import { useMemo, useState, useRef } from 'react'
 import { ChevronDown } from 'lucide-react'
 import { STATUS_CONFIG } from '../../types'
 import type { Task, TaskStatus } from '../../types'
 import { TaskRow } from './TaskRow'
 import { QuickAddTask } from './QuickAddTask'
+import { useTaskStore } from '../../store/taskStore'
 
 interface Props {
   tasks: Task[]
@@ -18,15 +19,16 @@ const STATUS_ORDER: TaskStatus[] = ['todo', 'in_progress', 'on_hold', 'done']
 
 export function TaskList({ tasks, projectId, onSelectTask, onStatusChange, selectedIds, onToggleSelect }: Props) {
   const [collapsedSections, setCollapsedSections] = useState<Set<string>>(new Set())
+  const [dragOverId, setDragOverId] = useState<string | null>(null)
+  const [draggingId, setDraggingId] = useState<string | null>(null)
+  const dragSrcStatus = useRef<TaskStatus | null>(null)
+  const { updateTask } = useTaskStore()
 
-  // Only show root tasks (parent_id === null), sub-tasks rendered inside TaskRow
   const rootTasks = useMemo(() => tasks.filter((t) => !t.parent_id), [tasks])
 
   const grouped = useMemo(() => {
     const map: Record<TaskStatus, Task[]> = { todo: [], in_progress: [], on_hold: [], done: [] }
-    for (const task of rootTasks) {
-      map[task.status].push(task)
-    }
+    for (const task of rootTasks) map[task.status].push(task)
     return map
   }, [rootTasks])
 
@@ -37,6 +39,46 @@ export function TaskList({ tasks, projectId, onSelectTask, onStatusChange, selec
       else next.add(status)
       return next
     })
+  }
+
+  const handleDragStart = (e: React.DragEvent, task: Task) => {
+    e.dataTransfer.setData('taskId', task.id)
+    e.dataTransfer.effectAllowed = 'move'
+    dragSrcStatus.current = task.status
+    setDraggingId(task.id)
+  }
+
+  const handleDragEnd = () => {
+    setDraggingId(null)
+    setDragOverId(null)
+    dragSrcStatus.current = null
+  }
+
+  const handleDragOver = (e: React.DragEvent, taskId: string) => {
+    e.preventDefault()
+    e.dataTransfer.dropEffect = 'move'
+    if (taskId !== draggingId) setDragOverId(taskId)
+  }
+
+  const handleDrop = async (e: React.DragEvent, targetTask: Task, status: TaskStatus) => {
+    e.preventDefault()
+    const srcId = e.dataTransfer.getData('taskId')
+    if (!srcId || srcId === targetTask.id) { setDragOverId(null); return }
+
+    const items = grouped[status]
+    const targetIdx = items.findIndex((t) => t.id === targetTask.id)
+
+    if (dragSrcStatus.current === status) {
+      // Reorder within same section — reassign positions
+      const reordered = items.filter((t) => t.id !== srcId)
+      reordered.splice(targetIdx, 0, items.find((t) => t.id === srcId)!)
+      await Promise.all(reordered.map((t, i) => updateTask(t.id, { position: i })))
+    } else {
+      // Cross-column drop — change status and position
+      if (onStatusChange) onStatusChange(srcId, status)
+      await updateTask(srcId, { status, position: targetIdx })
+    }
+    setDragOverId(null)
   }
 
   return (
@@ -67,14 +109,23 @@ export function TaskList({ tasks, projectId, onSelectTask, onStatusChange, selec
             {!isCollapsed && (
               <div>
                 {items.map((task) => (
-                  <TaskRow
+                  <div
                     key={task.id}
-                    task={task}
-                    onSelect={onSelectTask}
-                    onStatusChange={onStatusChange}
-                    selected={selectedIds?.has(task.id)}
-                    onToggleSelect={onToggleSelect}
-                  />
+                    draggable
+                    onDragStart={(e) => handleDragStart(e, task)}
+                    onDragEnd={handleDragEnd}
+                    onDragOver={(e) => handleDragOver(e, task.id)}
+                    onDrop={(e) => handleDrop(e, task, status)}
+                    className={`transition-opacity duration-150 ${draggingId === task.id ? 'opacity-40' : 'opacity-100'} ${dragOverId === task.id ? 'border-t-2 border-primary-400' : ''}`}
+                  >
+                    <TaskRow
+                      task={task}
+                      onSelect={onSelectTask}
+                      onStatusChange={onStatusChange}
+                      selected={selectedIds?.has(task.id)}
+                      onToggleSelect={onToggleSelect}
+                    />
+                  </div>
                 ))}
                 {/* Quick add at bottom of section */}
                 <div className="px-4 py-2 border-b border-gray-100 dark:border-gray-800">

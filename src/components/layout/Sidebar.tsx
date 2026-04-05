@@ -8,7 +8,7 @@ import { TeamSwitcher } from '../team/TeamSwitcher'
 import { InviteModal } from '../team/InviteModal'
 import { CreateProjectModal } from '../project/CreateProjectModal'
 
-export function Sidebar({ collapsed, onCollapse: _onCollapse }: { collapsed: boolean; onCollapse: () => void }) {
+export function Sidebar({ collapsed, onCollapse }: { collapsed: boolean; onCollapse: () => void }) {
   const { profile, signOut } = useAuthStore()
   const { currentTeam, fetchTeams, members } = useTeamStore()
   const { projects, fetchProjects } = useProjectStore()
@@ -63,13 +63,13 @@ export function Sidebar({ collapsed, onCollapse: _onCollapse }: { collapsed: boo
 
       {/* Navigation */}
       <nav className="flex-1 overflow-y-auto px-3 py-4 space-y-1">
-        <div onClick={() => navigate('/')} className={navItemClass('/')}>
+        <div onClick={() => { navigate('/'); onCollapse() }} className={navItemClass('/')}>
           <LayoutDashboard size={18} />
           <span>My Tasks</span>
         </div>
 
         {currentTeam && (
-          <div onClick={() => navigate('/team')} className={navItemClass('/team')}>
+          <div onClick={() => { navigate('/team'); onCollapse() }} className={navItemClass('/team')}>
             <Inbox size={18} />
             <span>Team Dashboard</span>
           </div>
@@ -94,7 +94,7 @@ export function Sidebar({ collapsed, onCollapse: _onCollapse }: { collapsed: boo
             {visibleProjects.map((project) => (
               <div
                 key={project.id}
-                onClick={() => navigate(`/projects/${project.id}`)}
+                onClick={() => { navigate(`/projects/${project.id}`); onCollapse() }}
                 className={navItemClass(`/projects/${project.id}`)}
               >
                 <span className="text-base leading-none">{project.emoji || '📁'}</span>
@@ -121,7 +121,7 @@ export function Sidebar({ collapsed, onCollapse: _onCollapse }: { collapsed: boo
         {currentTeam && (
           <div className="pt-6 space-y-1">
             {isAdmin && (
-              <div onClick={() => navigate('/admin')} className={navItemClass('/admin')}>
+              <div onClick={() => { navigate('/admin'); onCollapse() }} className={navItemClass('/admin')}>
                 <Settings size={18} />
                 <span>Admin Panel</span>
               </div>
@@ -133,7 +133,7 @@ export function Sidebar({ collapsed, onCollapse: _onCollapse }: { collapsed: boo
               <Users size={18} />
               <span>Invite Member</span>
             </div>
-            <div onClick={() => navigate('/trash')} className={navItemClass('/trash')}>
+            <div onClick={() => { navigate('/trash'); onCollapse() }} className={navItemClass('/trash')}>
               <Trash2 size={18} />
               <span>Trash</span>
             </div>

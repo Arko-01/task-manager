@@ -1,4 +1,4 @@
-import { Search, Moon, Sun, Monitor, Menu, MessageCircle } from 'lucide-react'
+import { Search, Moon, Sun, Monitor, Menu, MessageCircle, Keyboard } from 'lucide-react'
 import { useTheme } from '../../hooks/useTheme'
 import { NotificationDropdown } from '../notifications/NotificationDropdown'
 
@@ -57,6 +57,16 @@ export function Header({ onToggleSidebar, onToggleChat }: HeaderProps) {
 
         {/* Notifications */}
         <NotificationDropdown />
+
+        {/* Keyboard Shortcuts */}
+        <button
+          onClick={() => window.dispatchEvent(new CustomEvent('toggle-help'))}
+          className="rounded-lg p-2 text-gray-500 hover:bg-gray-100 dark:text-gray-400 dark:hover:bg-gray-800"
+          title="Keyboard shortcuts (?)"
+          aria-label="Show keyboard shortcuts"
+        >
+          <Keyboard size={18} />
+        </button>
 
         {/* Chat Toggle */}
         {onToggleChat && (

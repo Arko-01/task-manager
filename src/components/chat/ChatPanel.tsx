@@ -75,10 +75,8 @@ export function ChatPanel({ open, onClose }: Props) {
     return date.toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit' })
   }
 
-  if (!open) return null
-
   return (
-    <div className="fixed inset-y-0 right-0 z-20 w-80 border-l border-gray-200 bg-white shadow-lg dark:border-gray-800 dark:bg-gray-900 flex flex-col">
+    <div className={`fixed inset-y-0 right-0 z-20 w-80 border-l border-gray-200 bg-white shadow-lg dark:border-gray-800 dark:bg-gray-900 flex flex-col transition-transform duration-300 ease-in-out ${open ? 'translate-x-0' : 'translate-x-full'}`}>
       {/* Header */}
       <div className="flex items-center justify-between border-b border-gray-200 px-4 py-3 dark:border-gray-800">
         {currentConversation ? (

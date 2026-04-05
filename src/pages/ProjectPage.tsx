@@ -122,7 +122,7 @@ export function ProjectPage() {
       {loading && (view === 'list' || view === 'calendar' || view === 'gantt' ? <TaskListSkeleton /> : <TaskBoardSkeleton />)}
 
       {!loading && (
-        <>
+        <div key={view} className="animate-fade-in">
           {view === 'list' && (
             <TaskList tasks={tasks} projectId={projectId} onSelectTask={handleSelectTask} onStatusChange={handleStatusChange} selectedIds={selectedIds} onToggleSelect={toggleSelect} />
           )}
@@ -166,10 +166,15 @@ export function ProjectPage() {
             </>
           )}
           {view === 'gantt' && <TaskGantt tasks={tasks} onSelectTask={handleSelectTask} />}
-        </>
+        </div>
       )}
 
-      {currentTask && <TaskDetail task={currentTask} onClose={() => setCurrentTask(null)} />}
+      {currentTask && (
+        <>
+          <div className="fixed inset-0 z-20 bg-black/20 lg:hidden" onClick={() => setCurrentTask(null)} aria-hidden="true" />
+          <TaskDetail task={currentTask} onClose={() => setCurrentTask(null)} />
+        </>
+      )}
       <BulkActions selectedIds={selectedIds} onClear={() => setSelectedIds(new Set())} />
     </div>
   )

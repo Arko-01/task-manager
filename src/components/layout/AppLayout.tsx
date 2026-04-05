@@ -56,7 +56,7 @@ export function AppLayout() {
       )}
 
       {/* Main Content */}
-      <div className="flex flex-1 flex-col overflow-hidden">
+      <div className={`flex flex-1 flex-col overflow-hidden transition-[margin] duration-300 ease-in-out ${chatOpen ? 'lg:mr-80' : ''}`}>
         <Header
           onToggleSidebar={() => setMobileSidebarOpen((prev) => !prev)}
           onToggleChat={handleToggleChat}
